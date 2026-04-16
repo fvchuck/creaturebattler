@@ -863,7 +863,16 @@ function updateUnit(unit, dt, enemies, allUnits) {
   if (validEnemies.length === 0) {
     // Move toward nearest enemy regardless of targeting (for positioning)
     const nearest = findNearest(unit, enemies.filter(e => e.hp > 0));
-    if (nearest && unit.speed > 0) moveToward(unit, nearest, dt);
+    if (nearest && unit.speed > 0) {
+      // On different planes (e.g. ground unit under a flying enemy) collisions
+      // won't separate them, so stop once we're close enough to avoid overlap.
+      if (unit.isFlying !== nearest.isFlying) {
+        const stopDist = unit.radius + nearest.radius + 4;
+        if (distance(unit, nearest) > stopDist) moveToward(unit, nearest, dt);
+      } else {
+        moveToward(unit, nearest, dt);
+      }
+    }
     return;
   }
 
