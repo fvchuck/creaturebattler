@@ -886,7 +886,16 @@ function toCanvasCoords(canvasEl, clientX, clientY) {
 canvas.addEventListener('mousemove', e => {
   if (G.screen !== 'deploy') return;
   const { x, y } = toCanvasCoords(canvas, e.clientX, e.clientY);
-  G.hoverCell = { gx: Math.floor(x / GRID_SIZE), gy: Math.floor(y / GRID_SIZE) };
+  const cellX = Math.floor(x / GRID_SIZE);
+  const cellY = Math.floor(y / GRID_SIZE);
+  // Center the formation on the cursor
+  if (G.selectedIdx >= 0 && G.availableCreatures[G.selectedIdx] && !G.availableCreatures[G.selectedIdx].placed) {
+    const cr = G.availableCreatures[G.selectedIdx].creature;
+    const [cols, rows] = getFormationDims(cr);
+    G.hoverCell = { gx: cellX - Math.floor(cols / 2), gy: cellY - Math.floor(rows / 2) };
+  } else {
+    G.hoverCell = { gx: cellX, gy: cellY };
+  }
   renderDeploy();
 });
 
@@ -901,11 +910,11 @@ function tryPlaceAt(clientX, clientY) {
   if (!a || a.placed) return;
 
   const { x: mx, y: my } = toCanvasCoords(canvas, clientX, clientY);
-  const gx = Math.floor(mx / GRID_SIZE);
-  const gy = Math.floor(my / GRID_SIZE);
-
   const cr = a.creature;
   const [cols, rows] = getFormationDims(cr);
+  // Center the formation on the click
+  const gx = Math.floor(mx / GRID_SIZE) - Math.floor(cols / 2);
+  const gy = Math.floor(my / GRID_SIZE) - Math.floor(rows / 2);
   const gridCols = Math.floor(CANVAS_W / GRID_SIZE);
   const gridRows = Math.floor(CANVAS_H / GRID_SIZE);
   const deployStartRow = Math.floor(DEPLOY_TOP / GRID_SIZE);
