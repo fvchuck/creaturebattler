@@ -834,7 +834,7 @@ function deployEnemyCreatures() {
         isFlying: cr.isFlying, isGiant: cr.isGiant,
         radius, sizeCategory, unitGridSize,
         creatureId: cr.id, name: cr.name,
-        team: 'enemy',
+        team: 'enemy', deployRound: G.round,
         atkCooldown: 0, target: null,
         beam: cr.beam || false, beamRamp: cr.beamRamp || 0,
         beamTarget: null, beamTime: 0,
@@ -879,7 +879,7 @@ function addEnemyReinforcement() {
       isFlying: cr.isFlying, isGiant: cr.isGiant,
       radius, sizeCategory, unitGridSize,
       creatureId: cr.id, name: cr.name,
-      team: 'enemy',
+      team: 'enemy', deployRound: G.round,
       atkCooldown: 0, target: null,
       beam: cr.beam || false, beamRamp: cr.beamRamp || 0,
       beamTarget: null, beamTime: 0,
@@ -1029,10 +1029,13 @@ function drawGridOverlay(c) {
 }
 
 function drawDeployedUnits(c) {
-  // Draw enemy units so player can see what they're facing
-  c.globalAlpha = 0.7;
-  G.enemyUnits.forEach(u => drawUnit(c, u));
-  c.globalAlpha = 1.0;
+  // Show enemy units from previous rounds (transparent), hide current round's
+  const prevEnemy = G.enemyUnits.filter(u => u.deployRound < G.round);
+  if (prevEnemy.length > 0) {
+    c.globalAlpha = 0.5;
+    prevEnemy.forEach(u => drawUnit(c, u));
+    c.globalAlpha = 1.0;
+  }
   G.playerUnits.forEach(u => drawUnit(c, u));
 }
 
