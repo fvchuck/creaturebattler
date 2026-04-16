@@ -500,13 +500,68 @@ const CREATURES = [
 
 // Preload all sprite images
 const spriteCache = {};
+// Per-sprite content bounding box (tightest rect around non-transparent pixels).
+// Used to rationalize on-screen sprite sizes across creatures whose source PNGs
+// contain widely different amounts of transparent padding.
+const spriteBBox = {};
+function computeSpriteBBox(img) {
+  const w = img.naturalWidth, h = img.naturalHeight;
+  const cvs = document.createElement('canvas');
+  cvs.width = w; cvs.height = h;
+  const cx = cvs.getContext('2d');
+  cx.drawImage(img, 0, 0);
+  let data;
+  try { data = cx.getImageData(0, 0, w, h).data; }
+  catch (e) { return { fileW: w, fileH: h, x: 0, y: 0, w, h }; }
+  let minX = w, minY = h, maxX = -1, maxY = -1;
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      if (data[(y * w + x) * 4 + 3] > 10) {
+        if (x < minX) minX = x;
+        if (y < minY) minY = y;
+        if (x > maxX) maxX = x;
+        if (y > maxY) maxY = y;
+      }
+    }
+  }
+  if (maxX < 0) return { fileW: w, fileH: h, x: 0, y: 0, w, h };
+  return { fileW: w, fileH: h, x: minX, y: minY, w: maxX - minX + 1, h: maxY - minY + 1 };
+}
 function preloadSprites() {
   return Promise.all(CREATURES.map(c => new Promise(resolve => {
     const img = new Image();
-    img.onload = () => { spriteCache[c.id] = img; resolve(); };
+    img.onload = () => {
+      spriteCache[c.id] = img;
+      spriteBBox[c.id] = computeSpriteBBox(img);
+      resolve();
+    };
     img.onerror = () => { console.warn('Failed to load sprite:', c.sprite); resolve(); };
     img.src = c.sprite;
   })));
+}
+
+// Compute how to render a sprite so its visible content (not its transparent
+// padding) fits a target size. Returns draw parameters relative to a unit's
+// center point (u.x, drawY).
+function getSpriteRenderInfo(creatureId, targetSize) {
+  const img = spriteCache[creatureId];
+  if (!img) return null;
+  const bbox = spriteBBox[creatureId];
+  if (!bbox || bbox.w === 0 || bbox.h === 0) {
+    return { img, fullW: targetSize, fullH: targetSize,
+             offX: targetSize / 2, offY: targetSize / 2,
+             contentW: targetSize, contentH: targetSize };
+  }
+  const scale = targetSize / Math.max(bbox.w, bbox.h);
+  return {
+    img,
+    fullW: bbox.fileW * scale,
+    fullH: bbox.fileH * scale,
+    offX: (bbox.x + bbox.w / 2) * scale, // image-top-left → content center
+    offY: (bbox.y + bbox.h / 2) * scale,
+    contentW: bbox.w * scale,
+    contentH: bbox.h * scale,
+  };
 }
 
 const TRAINER_SPRITE_BASE = 'https://play.pokemonshowdown.com/sprites/trainers/';
@@ -1087,19 +1142,24 @@ function drawUnit(c, u) {
     c.fill();
   }
   const drawY = u.isFlying ? u.y - r * 0.5 : u.y;
-  // Sprite image
-  const img = spriteCache[u.creatureId];
+  // Sprite image — scale so the sprite's visible content (not the transparent
+  // padding in the source PNG) matches spriteSize across all creatures.
   const spriteSize = u.unitGridSize * GRID_SIZE * 0.85;
-  if (img) {
+  const info = getSpriteRenderInfo(u.creatureId, spriteSize);
+  if (info) {
     // Red outline for enemy units — draw red-tinted sprite slightly larger behind
     if (u.team === 'enemy') {
-      const outline = 1;
-      const oSize = spriteSize + outline * 2;
-      const tinted = getTintedSprite(img, Math.ceil(oSize), Math.ceil(oSize), 'rgba(255,50,50,0.9)');
-      c.drawImage(tinted, 0, 0, Math.ceil(oSize), Math.ceil(oSize),
-        u.x - oSize / 2, drawY - oSize / 2, oSize, oSize);
+      const outlinePx = 1;
+      const oScale = 1 + (outlinePx * 2) / spriteSize;
+      const oFullW = info.fullW * oScale;
+      const oFullH = info.fullH * oScale;
+      const oOffX = info.offX * oScale;
+      const oOffY = info.offY * oScale;
+      const tinted = getTintedSprite(info.img, Math.ceil(oFullW), Math.ceil(oFullH), 'rgba(255,50,50,0.9)');
+      c.drawImage(tinted, 0, 0, Math.ceil(oFullW), Math.ceil(oFullH),
+        u.x - oOffX, drawY - oOffY, oFullW, oFullH);
     }
-    c.drawImage(img, u.x - spriteSize / 2, drawY - spriteSize / 2, spriteSize, spriteSize);
+    c.drawImage(info.img, u.x - info.offX, drawY - info.offY, info.fullW, info.fullH);
   } else {
     // Fallback circle
     c.beginPath();
@@ -1112,12 +1172,15 @@ function drawUnit(c, u) {
     c.textBaseline = 'middle';
     c.fillText(u.name[0], u.x, drawY);
   }
-  // HP bar
+  // HP bar / team dot — anchor to the sprite's visible content height so they
+  // sit snugly against tall vs. short creatures instead of floating off the
+  // top of squat sprites (e.g. Geodude) based on the square bounding box.
+  const contentH = info ? info.contentH : spriteSize;
   if (u.hp < u.maxHp) {
     const barW = Math.max(r * 2, 14);
     const barH = 3;
     const barX = u.x - barW / 2;
-    const barY = drawY - spriteSize / 2 - 5;
+    const barY = drawY - contentH / 2 - 5;
     c.fillStyle = '#333';
     c.fillRect(barX, barY, barW, barH);
     const pct = u.hp / u.maxHp;
@@ -1126,7 +1189,7 @@ function drawUnit(c, u) {
   }
   // Team color dot
   c.beginPath();
-  c.arc(u.x, drawY + spriteSize / 2 + 2, 2.5, 0, Math.PI * 2);
+  c.arc(u.x, drawY + contentH / 2 + 2, 2.5, 0, Math.PI * 2);
   c.fillStyle = u.team === 'player' ? '#4caf50' : '#f44336';
   c.fill();
 }
@@ -1166,11 +1229,11 @@ function drawHoverPreview(c) {
     const positions = getFormationPositions(cr, gx * GRID_SIZE, gy * GRID_SIZE, GRID_SIZE);
     const ugs = getUnitGridSize(cr);
     const spriteSize = ugs * GRID_SIZE * 0.85;
-    const img = spriteCache[cr.id];
+    const info = getSpriteRenderInfo(cr.id, spriteSize);
     c.globalAlpha = 0.5;
     positions.forEach(p => {
-      if (img) {
-        c.drawImage(img, p.x - spriteSize / 2, p.y - spriteSize / 2, spriteSize, spriteSize);
+      if (info) {
+        c.drawImage(info.img, p.x - info.offX, p.y - info.offY, info.fullW, info.fullH);
       } else {
         c.beginPath();
         c.arc(p.x, p.y, spriteSize / 2, 0, Math.PI * 2);
