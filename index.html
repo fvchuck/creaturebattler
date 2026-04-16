@@ -1631,18 +1631,22 @@ function drawDeployedUnits(c) {
 
 function drawUnit(c, u) {
   const r = u.radius;
-  // Shadow for flying units
+  const spriteSize = getSpriteSize(getCreature(u.creatureId));
+  const info = getSpriteRenderInfo(u.creatureId, spriteSize);
+  const contentH = info ? info.contentH : spriteSize;
+  // Ground-anchor the sprite on the bottom edge of its grid footprint so
+  // squat and tall creatures all rest on the same grid line — matches the
+  // Unit Editor preview rather than floating at the footprint's center.
+  const footprintBottom = u.y + u.unitGridSize * GRID_SIZE / 2;
+  const flyLift = u.isFlying ? r * 0.9 : 0;
+  const drawY = footprintBottom - flyLift - contentH / 2;
+  // Shadow for flying units — sits on the ground (footprint bottom)
   if (u.isFlying) {
     c.fillStyle = 'rgba(0,0,0,0.3)';
     c.beginPath();
-    c.ellipse(u.x, u.y + r * 0.8, r * 0.8, r * 0.3, 0, 0, Math.PI * 2);
+    c.ellipse(u.x, footprintBottom - 2, r * 0.8, r * 0.3, 0, 0, Math.PI * 2);
     c.fill();
   }
-  const drawY = u.isFlying ? u.y - r * 0.5 : u.y;
-  // Sprite image — scale so the sprite's visible content (not the transparent
-  // padding in the source PNG) matches spriteSize across all creatures.
-  const spriteSize = getSpriteSize(getCreature(u.creatureId));
-  const info = getSpriteRenderInfo(u.creatureId, spriteSize);
   if (info) {
     c.drawImage(info.img, u.x - info.offX, drawY - info.offY, info.fullW, info.fullH);
   } else {
@@ -1660,7 +1664,6 @@ function drawUnit(c, u) {
   // HP bar / team dot — anchor to the sprite's visible content height so they
   // sit snugly against tall vs. short creatures instead of floating off the
   // top of squat sprites (e.g. Geodude) based on the square bounding box.
-  const contentH = info ? info.contentH : spriteSize;
   if (u.hp < u.maxHp) {
     const barW = Math.max(r * 2, 14);
     const barH = 3;
@@ -1714,13 +1717,20 @@ function drawHoverPreview(c) {
     const positions = getFormationPositions(cr, gx * GRID_SIZE, gy * GRID_SIZE, GRID_SIZE);
     const spriteSize = getSpriteSize(cr);
     const info = getSpriteRenderInfo(cr.id, spriteSize);
+    const contentH = info ? info.contentH : spriteSize;
+    const ugs = getUnitGridSize(cr);
+    const flyLift = cr.isFlying ? getUnitRadius(cr) * 0.9 : 0;
     c.globalAlpha = 0.5;
     positions.forEach(p => {
+      // Match drawUnit: anchor the sprite to the footprint bottom so preview
+      // sits on the grid exactly where the deployed unit will.
+      const footprintBottom = p.y + ugs * GRID_SIZE / 2;
+      const drawY = footprintBottom - flyLift - contentH / 2;
       if (info) {
-        c.drawImage(info.img, p.x - info.offX, p.y - info.offY, info.fullW, info.fullH);
+        c.drawImage(info.img, p.x - info.offX, drawY - info.offY, info.fullW, info.fullH);
       } else {
         c.beginPath();
-        c.arc(p.x, p.y, spriteSize / 2, 0, Math.PI * 2);
+        c.arc(p.x, drawY, spriteSize / 2, 0, Math.PI * 2);
         c.fillStyle = '#4caf50';
         c.fill();
       }
