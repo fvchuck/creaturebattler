@@ -472,7 +472,7 @@ const CREATURES = [
   { id:'metapod', name:'Metapod', sprite:'sprites/pm0011.png', tier:1.5, squadSize:8, hp:5000, atk:0, atkSpeed:0, speed:0, range:0, targeting:'none', isFlying:false, isGiant:false, desc:'Immobile meat shield' },
   { id:'kakuna', name:'Kakuna', sprite:'sprites/pm0014.png', tier:1.5, squadSize:12, hp:7500, atk:0, atkSpeed:0, speed:0, range:0, targeting:'none', isFlying:false, isGiant:false, desc:'Immobile poison cocoons' },
   { id:'ivysaur', name:'Ivysaur', sprite:'sprites/pm0002.png', tier:1.5, squadSize:4, hp:4571, atk:2, atkSpeed:0.2, speed:48, range:75, targeting:'ground', isFlying:false, isGiant:false, beam:true, beamRamp:7, desc:'Tanky solar beam squad' },
-  { id:'charmeleon', name:'Charmeleon', sprite:'sprites/pm0005.png', tier:1.5, squadSize:1, hp:9500, atk:150, atkSpeed:0.2, speed:21, range:155, targeting:'ground', isFlying:false, isGiant:false, aoeRadius:56, desc:'Rapid-fire flame solo' },
+  { id:'charmeleon', name:'Charmeleon', sprite:'sprites/pm0005.png', tier:1.5, squadSize:1, hp:9500, atk:150, atkSpeed:0.2, speed:21, range:155, targeting:'ground', isFlying:false, isGiant:false, aoeRadius:56, flamethrower:true, desc:'Rapid-fire flame solo' },
   { id:'exeggutor', name:'Exeggutor', sprite:'sprites/pm0103.png', tier:1.5, squadSize:4, hp:1149, atk:3184, atkSpeed:6.3, speed:18, range:300, targeting:'ground', isFlying:false, isGiant:false, artillery:true, numShots:4, aoeRadius:44, projectileSpeed:125, desc:'Long-range artillery' },
   { id:'graveler', name:'Graveler', sprite:'sprites/pm0075.png', tier:1.5, squadSize:5, hp:3478, atk:608, atkSpeed:4.5, speed:21, range:158, targeting:'ground', isFlying:false, isGiant:false, aoeRadius:40, desc:'Durable rock squad' },
   { id:'haunter', name:'Haunter', sprite:'sprites/pm0093.png', tier:1.5, squadSize:3, hp:900, atk:163, atkSpeed:0.3, speed:24, range:183, targeting:'ground', isFlying:false, isGiant:false, desc:'Rapid-fire ghosts' },
@@ -490,7 +490,7 @@ const CREATURES = [
   { id:'zapdos', name:'Zapdos', sprite:'sprites/pm0145.png', tier:2.5, squadSize:1, hp:15001, atk:1620, atkSpeed:1.6, speed:36, range:92, targeting:'both', isFlying:true, isGiant:false, desc:'Legendary electric bird' },
   // Tier 3
   { id:'venusaur', name:'Venusaur', sprite:'sprites/pm0003.png', tier:3, squadSize:1, hp:30907, atk:2, atkSpeed:0.2, speed:18, range:192, targeting:'ground', isFlying:false, isGiant:true, beam:true, beamRamp:70, desc:'Giant solar beam tank' },
-  { id:'charizard', name:'Charizard', sprite:'sprites/pm0006.png', tier:3, squadSize:1, hp:35332, atk:90, atkSpeed:0.1, speed:18, range:158, targeting:'ground', isFlying:true, isGiant:true, aoeRadius:120, desc:'Giant flying flamethrower' },
+  { id:'charizard', name:'Charizard', sprite:'sprites/pm0006.png', tier:3, squadSize:1, hp:35332, atk:90, atkSpeed:0.1, speed:18, range:158, targeting:'ground', isFlying:true, isGiant:true, aoeRadius:120, flamethrower:true, desc:'Giant flying flamethrower' },
   { id:'blastoise', name:'Blastoise', sprite:'sprites/pm0009.png', tier:3, squadSize:1, hp:43938, atk:6177, atkSpeed:1.8, speed:18, range:167, targeting:'ground', isFlying:false, isGiant:true, aoeRadius:40, desc:'Giant water cannon' },
   // Tier 3.5
   { id:'lugia', name:'Lugia', sprite:'sprites/pm0249.png', tier:3.5, squadSize:1, hp:22054, atk:19420, atkSpeed:4.6, speed:30, range:200, targeting:'both', isFlying:true, isGiant:true, artillery:true, numShots:4, aoeRadius:56, projectileSpeed:208, desc:'Legendary flying psychic' },
@@ -694,6 +694,7 @@ const G = {
   enemyUnits: [],
   projectiles: [],
   tracers: [],
+  flameCones: [],
   availableCreatures: [],   // [{creature, placed:bool}]
   selectedIdx: -1,
   grid: null,
@@ -903,6 +904,7 @@ function deployEnemyCreatures() {
         beam: cr.beam || false, beamRamp: cr.beamRamp || 0,
         beamTarget: null, beamTime: 0,
         artillery: cr.artillery || false,
+        flamethrower: cr.flamethrower || false,
         numShots: cr.numShots || 1,
         aoeRadius: cr.aoeRadius || 0,
         projectileSpeed: cr.projectileSpeed || 400,
@@ -952,6 +954,7 @@ function addEnemyReinforcement() {
       beam: cr.beam || false, beamRamp: cr.beamRamp || 0,
       beamTarget: null, beamTime: 0,
       artillery: cr.artillery || false,
+      flamethrower: cr.flamethrower || false,
       numShots: cr.numShots || 1,
       aoeRadius: cr.aoeRadius || 0,
       projectileSpeed: cr.projectileSpeed || 400,
@@ -1298,6 +1301,7 @@ function tryPlaceAt(clientX, clientY) {
       beam: cr.beam || false, beamRamp: cr.beamRamp || 0,
       beamTarget: null, beamTime: 0,
       artillery: cr.artillery || false,
+      flamethrower: cr.flamethrower || false,
       numShots: cr.numShots || 1,
       aoeRadius: cr.aoeRadius || 0,
       projectileSpeed: cr.projectileSpeed || 400,
@@ -1411,6 +1415,7 @@ function startBattle() {
   G.initialEnemyUnits = G.enemyUnits.map(u => ({ ...u }));
   G.projectiles = [];
   G.tracers = [];
+  G.flameCones = [];
   G.impactEffects = [];
   G.battleRunning = true;
   G.lastTime = performance.now();
@@ -1444,6 +1449,12 @@ function battleLoop(timestamp) {
   if (G.tracers) {
     G.tracers.forEach(t => t.life -= dt);
     G.tracers = G.tracers.filter(t => t.life > 0);
+  }
+
+  // Update flame cones (overlapping bursts that read as a continuous stream)
+  if (G.flameCones) {
+    G.flameCones.forEach(fc => fc.life -= dt);
+    G.flameCones = G.flameCones.filter(fc => fc.life > 0 && fc.unit.hp > 0);
   }
 
   // Remove dead
@@ -1558,6 +1569,18 @@ function attackTarget(unit, target) {
     const speed = unit.projectileSpeed || 400;
     const startX = unit.x;
     const startY = unit.isFlying ? unit.y - unit.radius * 0.5 : unit.y;
+
+    // Flamethrower: apply AOE immediately and emit a short-lived flame cone effect.
+    if (unit.flamethrower) {
+      const tx = target.x;
+      const ty = target.isFlying ? target.y - target.radius * 0.5 : target.y;
+      const ang = Math.atan2(ty - startY, tx - startX);
+      const reach = Math.min(distance(unit, target) + (target.radius || 0) + 10, unit.range + 20);
+      const life = (unit.atkSpeed || 0.2) * 1.6;
+      G.flameCones.push({ unit, ang, reach, life, maxLife: life });
+      applyAoeDamage(tx, ty, unit.aoeRadius, unit.atk, unit.team);
+      return;
+    }
 
     // Light attacks: instant hit-scan tracer instead of a circle projectile.
     const isLight = perShotDmg < 200 && !unit.artillery && !unit.aoeRadius && !unit.beam;
@@ -1734,6 +1757,9 @@ function renderBattle() {
   // Beam effects (draw behind everything else)
   drawBeams(bctx, [...G.playerUnits, ...G.enemyUnits]);
 
+  // Flame cones (drawn behind units so unit sprites overlap the throat)
+  drawFlameCones(bctx);
+
   // Tracers (light-attack hit-scan lines)
   if (G.tracers) {
     G.tracers.forEach(t => {
@@ -1811,6 +1837,57 @@ function renderBattle() {
   // Sort by y for depth
   allAlive.sort((a, b) => a.y - b.y);
   allAlive.forEach(u => drawUnit(bctx, u));
+}
+
+function drawFlameCones(c) {
+  if (!G.flameCones || G.flameCones.length === 0) return;
+  G.flameCones.forEach(fc => {
+    const u = fc.unit;
+    if (u.hp <= 0) return;
+    const a = fc.life / fc.maxLife; // 1 → 0 as it ages
+    const ox = u.x;
+    const oy = (u.isFlying ? u.y - u.radius * 0.5 : u.y) - u.radius * 0.15;
+    const dx = Math.cos(fc.ang);
+    const dy = Math.sin(fc.ang);
+    const px = -dy, py = dx;
+    const len = fc.reach;
+    const ex = ox + dx * len;
+    const ey = oy + dy * len;
+
+    // Layered triangular cone with progressively narrower, brighter inner layers.
+    // Each layer's end-cap vertices get a small per-frame jitter for flickering edges.
+    const drawLayer = (halfDeg, color, jitterAmt) => {
+      const hw = len * Math.tan(halfDeg * Math.PI / 180);
+      const j1 = (Math.random() - 0.5) * hw * jitterAmt;
+      const j2 = (Math.random() - 0.5) * hw * jitterAmt;
+      const lj = (Math.random() - 0.5) * len * 0.06;
+      const tipX = ex + dx * lj;
+      const tipY = ey + dy * lj;
+      c.beginPath();
+      c.moveTo(ox, oy);
+      c.lineTo(tipX + px * (hw + j1), tipY + py * (hw + j1));
+      c.lineTo(tipX - px * (hw + j2), tipY - py * (hw + j2));
+      c.closePath();
+      c.fillStyle = color;
+      c.fill();
+    };
+
+    c.save();
+    c.globalAlpha = a;
+    drawLayer(17, 'rgba(140, 30, 0, 0.35)', 0.35);   // dark red outer haze
+    drawLayer(12, 'rgba(230, 90, 0, 0.55)', 0.30);   // orange body
+    drawLayer(7,  'rgba(255, 180, 40, 0.70)', 0.25); // bright yellow core
+    drawLayer(3,  'rgba(255, 245, 180, 0.85)', 0.20);// near-white throat jet
+
+    // Throat glow at the unit's mouth
+    const throatR = 4 + Math.random() * 2;
+    c.globalAlpha = a * 0.9;
+    c.beginPath();
+    c.arc(ox + dx * 3, oy + dy * 3, throatR, 0, Math.PI * 2);
+    c.fillStyle = 'rgba(255, 240, 200, 0.95)';
+    c.fill();
+    c.restore();
+  });
 }
 
 function drawBeams(c, units) {
@@ -1924,6 +2001,7 @@ function continueToNextRound() {
   G.round++;
   G.projectiles = [];
   G.tracers = [];
+  G.flameCones = [];
   G.impactEffects = [];
   // Restore both sides from their pre-battle snapshots (full HP, fallen units back)
   G.playerUnits = G.initialPlayerUnits.map(u => ({ ...u }));
