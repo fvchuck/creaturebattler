@@ -563,6 +563,24 @@ canvas { display: block; image-rendering: pixelated; }
 // =====================================================================
 // DATA
 // =====================================================================
+// Real-world Pokédex heights (meters). Drives rationalized sprite sizes —
+// Weedle/Caterpie/Pidgey at 0.3 m are the baseline (smallest sprite).
+const POKEDEX_HEIGHT_M = {
+  bulbasaur:0.7,  ivysaur:1.0,   venusaur:2.0,
+  charmander:0.6, charmeleon:1.1, charizard:1.7,
+  squirtle:0.5,   wartortle:1.0,  blastoise:1.6,
+  caterpie:0.3,   metapod:0.7,    butterfree:1.1,
+  weedle:0.3,     kakuna:0.6,     beedrill:1.0,
+  pidgey:0.3,     pidgeotto:1.1,  pidgeot:1.5,
+  pikachu:0.4,    raichu:0.8,
+  krabby:0.4,     kingler:1.3,
+  geodude:0.4,    graveler:1.0,   golem:1.4,
+  gastly:1.3,     haunter:1.6,    gengar:1.5,
+  exeggcute:0.4,  exeggutor:2.0,
+  magikarp:0.9,   gyarados:6.5,
+  zapdos:1.6,     lugia:5.2,
+};
+
 const CREATURES = [
   // Tier 1 — stats synced from creatures.csv (HP & ATK raw, Speed ×3, Range ÷6)
   { id:'bulbasaur', name:'Bulbasaur', sprite:'sprites/pm0001.png', tier:1, squadSize:4, hp:2285, atk:2, atkSpeed:0.2, speed:48, range:75, targeting:'ground', isFlying:false, isGiant:false, beam:true, beamRamp:4, desc:'Solar beam squad' },
@@ -743,6 +761,40 @@ function getUnitGridSize(c) {
 
 function getUnitRadius(c) {
   return getUnitGridSize(c) * GRID_SIZE * 0.4;
+}
+
+// Rationalized sprite size: scales with each Pokémon's real-world height
+// (Weedle/Caterpie/Pidgey at 0.3 m = baseline 34 px), compressed with a
+// square-root so extreme sizes (Gyarados 6.5 m) don't blow past the field.
+// Role caps keep squads from overlapping into mush and give solos/giants
+// the screen presence they deserve regardless of their literal height.
+const SPRITE_BASELINE_HEIGHT_M = 0.3;
+const SPRITE_BASELINE_PX = GRID_SIZE * 0.85; // 34 px — old ugs=1 sprite size
+
+function getSpriteScale(c) {
+  if (typeof c.spriteScale === 'number') return c.spriteScale; // manual override
+  const h = POKEDEX_HEIGHT_M[c.id] || SPRITE_BASELINE_HEIGHT_M;
+  const compressed = Math.sqrt(h / SPRITE_BASELINE_HEIGHT_M);
+  const ugs = getUnitGridSize(c);
+  if (ugs === 1) {
+    // Squad member — cap tightens as squad grows (less room per unit in formation)
+    const cap = c.squadSize <= 3 ? 1.8
+              : c.squadSize <= 6 ? 1.55
+              : c.squadSize <= 12 ? 1.3
+              : 1.15;
+    return Math.min(compressed, cap);
+  }
+  if (ugs === 2) {
+    // Solo hero — floor so tiny solos (Pikachu) still read chunky and stay
+    // visibly bigger than capped squad members, cap for 2x2 cell footprint
+    return Math.max(2.0, Math.min(compressed * 1.35, 3.05));
+  }
+  // Giant boss — floor so smallest giant still dominates solos, cap for screen fit
+  return Math.max(3.0, Math.min(compressed * 1.3, 5.5));
+}
+
+function getSpriteSize(c) {
+  return getSpriteScale(c) * SPRITE_BASELINE_PX;
 }
 
 function getSizeCategory(c) {
@@ -1266,7 +1318,7 @@ function drawUnit(c, u) {
   const drawY = u.isFlying ? u.y - r * 0.5 : u.y;
   // Sprite image — scale so the sprite's visible content (not the transparent
   // padding in the source PNG) matches spriteSize across all creatures.
-  const spriteSize = u.unitGridSize * GRID_SIZE * 0.85;
+  const spriteSize = getSpriteSize(getCreature(u.creatureId));
   const info = getSpriteRenderInfo(u.creatureId, spriteSize);
   if (info) {
     c.drawImage(info.img, u.x - info.offX, drawY - info.offY, info.fullW, info.fullH);
@@ -1337,8 +1389,7 @@ function drawHoverPreview(c) {
   // Preview sprites
   if (valid) {
     const positions = getFormationPositions(cr, gx * GRID_SIZE, gy * GRID_SIZE, GRID_SIZE);
-    const ugs = getUnitGridSize(cr);
-    const spriteSize = ugs * GRID_SIZE * 0.85;
+    const spriteSize = getSpriteSize(cr);
     const info = getSpriteRenderInfo(cr.id, spriteSize);
     c.globalAlpha = 0.5;
     positions.forEach(p => {
