@@ -750,17 +750,12 @@ function drawUnit(c, u) {
   const img = spriteCache[u.creatureId];
   const spriteSize = u.unitGridSize * GRID_SIZE * 0.85;
   if (img) {
-    // Tint enemy units red-ish
+    c.drawImage(img, u.x - spriteSize / 2, drawY - spriteSize / 2, spriteSize, spriteSize);
+    // Red border for enemy units
     if (u.team === 'enemy') {
-      c.save();
-      c.globalAlpha = 0.92;
-      c.drawImage(img, u.x - spriteSize / 2, drawY - spriteSize / 2, spriteSize, spriteSize);
-      c.globalCompositeOperation = 'source-atop';
-      c.fillStyle = 'rgba(255,60,60,0.2)';
-      c.fillRect(u.x - spriteSize / 2, drawY - spriteSize / 2, spriteSize, spriteSize);
-      c.restore();
-    } else {
-      c.drawImage(img, u.x - spriteSize / 2, drawY - spriteSize / 2, spriteSize, spriteSize);
+      c.strokeStyle = 'rgba(255,50,50,0.8)';
+      c.lineWidth = 2;
+      c.strokeRect(u.x - spriteSize / 2 - 1, drawY - spriteSize / 2 - 1, spriteSize + 2, spriteSize + 2);
     }
   } else {
     // Fallback circle
