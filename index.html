@@ -1106,6 +1106,35 @@ function saveDebugFlags() {
 // =====================================================================
 // CREATURE OVERRIDES (persisted — driven by the unit editor debug tool)
 // =====================================================================
+// Baked-in tunings produced by the Unit Editor. Folded into CREATURES
+// BEFORE the defaults snapshot so these become the new shipping defaults —
+// "Reset to Default" in the editor restores to these values, not to the
+// formula-derived originals. Any further user overrides in localStorage
+// layer on top as usual.
+const BAKED_UNIT_TUNINGS = {
+  krabby:     { spriteScale: 1.3823529411764706 },
+  squirtle:   { spriteScale: 1.5588235294117647 },
+  charmander: { spriteScale: 1.6764705882352942, unitGridSize: 1 },
+  pikachu:    { spriteScale: 1.8823529411764706, unitGridSize: 1 },
+  exeggutor:  { spriteScale: 1.9705882352941178 },
+  geodude:    { spriteScale: 2.5588235294117645 },
+  graveler:   { spriteScale: 2.5588235294117645 },
+  wartortle:  { spriteScale: 2.8529411764705883, unitGridSize: 2 },
+  gengar:     { spriteScale: 2.8529411764705883 },
+  charmeleon: { spriteScale: 2.8823529411764706 },
+  ivysaur:    { spriteScale: 2.9411764705882355, unitGridSize: 2 },
+  kingler:    { spriteScale: 3.264705882352941, unitGridSize: 2 },
+  zapdos:     { spriteScale: 3.6176470588235294 },
+  raichu:     { spriteScale: 3.911764705882353 },
+  blastoise:  { spriteScale: 4.029411764705882 },
+  charizard:  { spriteScale: 4.617647058823529 },
+  venusaur:   { spriteScale: 4.764705882352941 },
+};
+Object.keys(BAKED_UNIT_TUNINGS).forEach(id => {
+  const c = CREATURES.find(x => x.id === id);
+  if (c) Object.assign(c, BAKED_UNIT_TUNINGS[id]);
+});
+
 // Snapshot shipping defaults so we can restore them on "Reset to Default".
 const CREATURE_DEFAULTS = {};
 CREATURES.forEach(c => { CREATURE_DEFAULTS[c.id] = { ...c }; });
