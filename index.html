@@ -736,14 +736,20 @@ function drawDeployedUnits(c) {
   // Also draw enemy units if any (from previous rounds - they're hidden in deploy, but we show player's)
 }
 
-// Reusable offscreen canvas for sprite outline effect
-const _outlineCanvas = document.createElement('canvas');
-const _outlineCtx = _outlineCanvas.getContext('2d');
-function _getOutlineBuf(size) {
-  if (_outlineCanvas.width < size || _outlineCanvas.height < size) {
-    _outlineCanvas.width = _outlineCanvas.height = size;
+// Reusable offscreen canvas for tinting sprites a solid color
+const _tintCanvas = document.createElement('canvas');
+const _tintCtx = _tintCanvas.getContext('2d');
+function getTintedSprite(img, w, h, color) {
+  if (_tintCanvas.width < w || _tintCanvas.height < h) {
+    _tintCanvas.width = w; _tintCanvas.height = h;
   }
-  return _outlineCtx;
+  _tintCtx.clearRect(0, 0, w, h);
+  _tintCtx.drawImage(img, 0, 0, w, h);
+  _tintCtx.globalCompositeOperation = 'source-in';
+  _tintCtx.fillStyle = color;
+  _tintCtx.fillRect(0, 0, w, h);
+  _tintCtx.globalCompositeOperation = 'source-over';
+  return _tintCanvas;
 }
 
 function drawUnit(c, u) {
@@ -760,29 +766,13 @@ function drawUnit(c, u) {
   const img = spriteCache[u.creatureId];
   const spriteSize = u.unitGridSize * GRID_SIZE * 0.85;
   if (img) {
-    // Red outline for enemy units — draw sprite silhouette at offsets
+    // Red outline for enemy units — draw red-tinted sprite slightly larger behind
     if (u.team === 'enemy') {
-      const pad = 2; // outline thickness
-      const buf = _getOutlineBuf(Math.ceil(spriteSize) + pad * 2);
-      const bx = buf.canvas.width;
-      buf.clearRect(0, 0, bx, bx);
-      // Draw sprite at offsets to create an expanded silhouette
-      for (let ox = -pad; ox <= pad; ox++) {
-        for (let oy = -pad; oy <= pad; oy++) {
-          if (ox === 0 && oy === 0) continue;
-          buf.drawImage(img, pad + ox, pad + oy, spriteSize, spriteSize);
-        }
-      }
-      // Fill only where pixels were drawn (the silhouette) with red
-      buf.globalCompositeOperation = 'source-in';
-      buf.fillStyle = 'rgba(255,50,50,0.8)';
-      buf.fillRect(0, 0, bx, bx);
-      buf.globalCompositeOperation = 'source-over';
-      // Punch out the center so only the outline ring remains
-      buf.globalCompositeOperation = 'destination-out';
-      buf.drawImage(img, pad, pad, spriteSize, spriteSize);
-      buf.globalCompositeOperation = 'source-over';
-      c.drawImage(buf.canvas, u.x - spriteSize / 2 - pad, drawY - spriteSize / 2 - pad);
+      const outline = 3;
+      const oSize = spriteSize + outline * 2;
+      const tinted = getTintedSprite(img, Math.ceil(oSize), Math.ceil(oSize), 'rgba(255,50,50,0.9)');
+      c.drawImage(tinted, 0, 0, Math.ceil(oSize), Math.ceil(oSize),
+        u.x - oSize / 2, drawY - oSize / 2, oSize, oSize);
     }
     c.drawImage(img, u.x - spriteSize / 2, drawY - spriteSize / 2, spriteSize, spriteSize);
   } else {
