@@ -414,8 +414,8 @@ canvas { display: block; image-rendering: pixelated; }
 }
 .debug-tool-btn:hover { background: linear-gradient(135deg, #3a3a58, #2e2e4a); }
 
-/* Sprite editor overlay */
-#sprite-editor {
+/* Unit editor overlay */
+#unit-editor {
   display: none;
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
@@ -425,7 +425,7 @@ canvas { display: block; image-rendering: pixelated; }
   justify-content: center;
   padding: 12px;
 }
-#sprite-editor.active { display: flex; }
+#unit-editor.active { display: flex; }
 .se-inner {
   background: #1a1a2e;
   border: 2px solid #ffd700;
@@ -632,17 +632,17 @@ canvas { display: block; image-rendering: pixelated; }
     </div>
     <div class="debug-section">
       <div class="debug-section-title">Creature Tuning</div>
-      <button id="debug-open-sprite-editor" class="debug-tool-btn" type="button">Open Sprite Editor</button>
+      <button id="debug-open-unit-editor" class="debug-tool-btn" type="button">Open Unit Editor</button>
     </div>
     <button id="debug-close">Close</button>
   </div>
 </div>
 
-<!-- SPRITE EDITOR MODAL -->
-<div id="sprite-editor">
+<!-- UNIT EDITOR MODAL -->
+<div id="unit-editor">
   <div class="se-inner">
     <div class="se-header">
-      <h2>Sprite Editor <span class="se-header-sub">click a sprite to edit</span></h2>
+      <h2>Unit Editor <span class="se-header-sub">click a unit to edit</span></h2>
       <button id="se-close" class="se-close-btn" type="button">×</button>
     </div>
     <div class="se-body">
@@ -970,7 +970,7 @@ const MELEE_RANGE = 30;
 function getCreature(id) { return CREATURES.find(c => c.id === id); }
 
 // How many grid cells one unit occupies (NxN). Per-creature `unitGridSize`
-// override (set via the sprite editor) wins over the derived default so
+// override (set via the unit editor) wins over the derived default so
 // designers can experiment with footprint sizing decoupled from isGiant/squadSize.
 function getUnitGridSize(c) {
   if (typeof c.unitGridSize === 'number') return c.unitGridSize;
@@ -1104,7 +1104,7 @@ function saveDebugFlags() {
 }
 
 // =====================================================================
-// CREATURE OVERRIDES (persisted — driven by the sprite editor debug tool)
+// CREATURE OVERRIDES (persisted — driven by the unit editor debug tool)
 // =====================================================================
 // Snapshot shipping defaults so we can restore them on "Reset to Default".
 const CREATURE_DEFAULTS = {};
@@ -2666,7 +2666,7 @@ document.querySelectorAll('.debug-switch').forEach(sw => {
 });
 
 // =====================================================================
-// SPRITE EDITOR (debug tool)
+// UNIT EDITOR (debug tool)
 // =====================================================================
 let seSelectedId = null;
 
@@ -2704,7 +2704,7 @@ function seDrawCreatureOnGround(ctx, creatureId, size, x, groundY) {
     info.fullW, info.fullH);
 }
 
-function renderSpriteEditor() {
+function renderUnitEditor() {
   const lineup = document.getElementById('se-lineup');
   if (!lineup) return;
   lineup.innerHTML = '';
@@ -2741,14 +2741,14 @@ function renderSpriteEditor() {
     tile.appendChild(px);
     tile.addEventListener('click', () => {
       seSelectedId = c.id;
-      renderSpriteEditor();
+      renderUnitEditor();
     });
     lineup.appendChild(tile);
   });
-  renderSpriteEditorDetail();
+  renderUnitEditorDetail();
 }
 
-function renderSpriteEditorDetail() {
+function renderUnitEditorDetail() {
   const root = document.getElementById('se-editor');
   if (!root) return;
   if (!seSelectedId) {
@@ -2824,7 +2824,7 @@ function renderSpriteEditorDetail() {
     </div>
   `;
 
-  drawSpriteEditorPreview(c, currentSize, currentUgs);
+  drawUnitEditorPreview(c, currentSize, currentUgs);
 
   // Live sliders — preview-only, do not persist until Save
   const sizeInput = document.getElementById('se-size');
@@ -2836,12 +2836,12 @@ function renderSpriteEditorDetail() {
   sizeInput.addEventListener('input', () => {
     const p = readPreview();
     document.getElementById('se-size-val').textContent = p.size + 'px';
-    drawSpriteEditorPreview(c, p.size, p.ugs);
+    drawUnitEditorPreview(c, p.size, p.ugs);
   });
   ugsInput.addEventListener('input', () => {
     const p = readPreview();
     document.getElementById('se-ugs-val').textContent = p.ugs + '×' + p.ugs;
-    drawSpriteEditorPreview(c, p.size, p.ugs);
+    drawUnitEditorPreview(c, p.size, p.ugs);
   });
 
   document.getElementById('se-save').addEventListener('click', () => {
@@ -2883,7 +2883,7 @@ function renderSpriteEditorDetail() {
     const msg = Object.keys(override).length
       ? 'Saved — ' + Object.keys(override).length + ' override(s) active'
       : 'Saved — reverted to defaults';
-    renderSpriteEditor();
+    renderUnitEditor();
     const status = document.getElementById('se-save-status');
     if (status) status.textContent = msg;
   });
@@ -2892,7 +2892,7 @@ function renderSpriteEditorDetail() {
     delete creatureOverrides[c.id];
     saveCreatureOverrides(creatureOverrides);
     applyCreatureOverrides();
-    renderSpriteEditor();
+    renderUnitEditor();
   });
 }
 
@@ -2923,7 +2923,7 @@ function seDrawFootprint(cx, startCol, startRow, ugs, fill, stroke) {
   cx.strokeRect(x0 + 0.75, y0 + 0.75, span - 0.5, span - 0.5);
 }
 
-function drawSpriteEditorPreview(c, previewSize, previewUgs) {
+function drawUnitEditorPreview(c, previewSize, previewUgs) {
   const cv = document.getElementById('se-preview-canvas');
   if (!cv) return;
   const cx = cv.getContext('2d');
@@ -2990,17 +2990,17 @@ function drawSpriteEditorPreview(c, previewSize, previewUgs) {
     selCenterX, groundY + 14);
 }
 
-document.getElementById('debug-open-sprite-editor').addEventListener('click', () => {
+document.getElementById('debug-open-unit-editor').addEventListener('click', () => {
   document.getElementById('debug-panel').classList.remove('active');
-  document.getElementById('sprite-editor').classList.add('active');
-  renderSpriteEditor();
+  document.getElementById('unit-editor').classList.add('active');
+  renderUnitEditor();
 });
 document.getElementById('se-close').addEventListener('click', () => {
-  document.getElementById('sprite-editor').classList.remove('active');
+  document.getElementById('unit-editor').classList.remove('active');
 });
-document.getElementById('sprite-editor').addEventListener('click', e => {
-  if (e.target.id === 'sprite-editor') {
-    document.getElementById('sprite-editor').classList.remove('active');
+document.getElementById('unit-editor').addEventListener('click', e => {
+  if (e.target.id === 'unit-editor') {
+    document.getElementById('unit-editor').classList.remove('active');
   }
 });
 
