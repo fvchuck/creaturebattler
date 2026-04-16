@@ -363,19 +363,30 @@ canvas { display: block; image-rendering: pixelated; }
 // =====================================================================
 const CREATURES = [
   // Tier 1 — stats synced from creatures.csv (HP & ATK raw, Speed ×3, Range ÷6)
+  { id:'bulbasaur', name:'Bulbasaur', sprite:'sprites/pm0001.png', tier:1, squadSize:4, hp:2285, atk:2, atkSpeed:0.2, speed:48, range:75, targeting:'ground', isFlying:false, isGiant:false, beam:true, beamRamp:4, desc:'Solar beam squad' },
+  { id:'charmander', name:'Charmander', sprite:'sprites/pm0004.png', tier:1, squadSize:1, hp:4004, atk:347, atkSpeed:0.9, speed:21, range:155, targeting:'ground', isFlying:false, isGiant:false, desc:'Ranged fire solo' },
+  { id:'squirtle', name:'Squirtle', sprite:'sprites/pm0007.png', tier:1, squadSize:6, hp:900, atk:270, atkSpeed:1.8, speed:18, range:167, targeting:'ground', isFlying:false, isGiant:false, desc:'Water cannon squad' },
   { id:'krabby', name:'Krabby', sprite:'sprites/pm0098.png', tier:1, squadSize:6, hp:1108, atk:316, atkSpeed:0.9, speed:48, range:0, targeting:'ground', isFlying:false, isGiant:false, desc:'Melee crab swarm' },
   { id:'caterpie', name:'Caterpie', sprite:'sprites/pm0010.png', tier:1, squadSize:18, hp:117, atk:61, atkSpeed:1.5, speed:18, range:125, targeting:'both', isFlying:false, isGiant:false, desc:'Tiny ranged chaff' },
+  { id:'weedle', name:'Weedle', sprite:'sprites/pm0013.png', tier:1, squadSize:24, hp:277, atk:40, atkSpeed:0.6, speed:48, range:0, targeting:'ground', isFlying:false, isGiant:false, desc:'Poison melee swarm' },
   { id:'pidgey', name:'Pidgey', sprite:'sprites/pm0016.png', tier:1, squadSize:12, hp:155, atk:100, atkSpeed:1.6, speed:48, range:83, targeting:'both', isFlying:true, isGiant:false, desc:'Fast flying swarm' },
   { id:'pikachu', name:'Pikachu', sprite:'sprites/pm0025.png', tier:1, squadSize:1, hp:1622, atk:1800, atkSpeed:2.6, speed:30, range:233, targeting:'both', isFlying:false, isGiant:false, desc:'Ranged electric solo' },
+  { id:'geodude', name:'Geodude', sprite:'sprites/pm0074.png', tier:1, squadSize:5, hp:1350, atk:290, atkSpeed:4.5, speed:21, range:158, targeting:'ground', isFlying:false, isGiant:false, desc:'Slow rock squad' },
+  { id:'exeggcute', name:'Exeggcute', sprite:'sprites/pm0102.png', tier:1, squadSize:4, hp:400, atk:1400, atkSpeed:6.3, speed:18, range:283, targeting:'ground', isFlying:false, isGiant:false, desc:'Fragile long-range eggs' },
+  { id:'gastly', name:'Gastly', sprite:'sprites/pm0092.png', tier:1, squadSize:6, hp:190, atk:33, atkSpeed:0.3, speed:24, range:183, targeting:'ground', isFlying:false, isGiant:false, desc:'Rapid-fire ghost swarm' },
+  { id:'magikarp', name:'Magikarp', sprite:'sprites/pm0129.png', tier:1, squadSize:1, hp:4004, atk:0, atkSpeed:0, speed:0, range:0, targeting:'none', isFlying:false, isGiant:false, desc:'Useless flopping fish' },
   // Tier 1.5
   { id:'metapod', name:'Metapod', sprite:'sprites/pm0011.png', tier:1.5, squadSize:8, hp:5000, atk:0, atkSpeed:0, speed:0, range:0, targeting:'none', isFlying:false, isGiant:false, desc:'Immobile meat shield' },
+  { id:'kakuna', name:'Kakuna', sprite:'sprites/pm0014.png', tier:1.5, squadSize:12, hp:7500, atk:0, atkSpeed:0, speed:0, range:0, targeting:'none', isFlying:false, isGiant:false, desc:'Immobile poison cocoons' },
   { id:'ivysaur', name:'Ivysaur', sprite:'sprites/pm0002.png', tier:1.5, squadSize:4, hp:4571, atk:2, atkSpeed:0.2, speed:48, range:75, targeting:'ground', isFlying:false, isGiant:false, beam:true, beamRamp:7, desc:'Tanky solar beam squad' },
+  { id:'charmeleon', name:'Charmeleon', sprite:'sprites/pm0005.png', tier:1.5, squadSize:1, hp:9500, atk:150, atkSpeed:0.2, speed:21, range:155, targeting:'ground', isFlying:false, isGiant:false, desc:'Rapid-fire flame solo' },
   { id:'exeggutor', name:'Exeggutor', sprite:'sprites/pm0103.png', tier:1.5, squadSize:4, hp:1149, atk:3184, atkSpeed:6.3, speed:18, range:300, targeting:'ground', isFlying:false, isGiant:false, desc:'Long-range artillery' },
   { id:'graveler', name:'Graveler', sprite:'sprites/pm0075.png', tier:1.5, squadSize:5, hp:3478, atk:608, atkSpeed:4.5, speed:21, range:158, targeting:'ground', isFlying:false, isGiant:false, desc:'Durable rock squad' },
   { id:'haunter', name:'Haunter', sprite:'sprites/pm0093.png', tier:1.5, squadSize:3, hp:900, atk:163, atkSpeed:0.3, speed:24, range:183, targeting:'ground', isFlying:false, isGiant:false, desc:'Rapid-fire ghosts' },
   // Tier 2
   { id:'kingler', name:'Kingler', sprite:'sprites/pm0099.png', tier:2, squadSize:2, hp:8201, atk:1497, atkSpeed:0.9, speed:48, range:0, targeting:'ground', isFlying:false, isGiant:false, desc:'Heavy melee duo' },
   { id:'pidgeotto', name:'Pidgeotto', sprite:'sprites/pm0017.png', tier:2, squadSize:6, hp:622, atk:405, atkSpeed:1.4, speed:48, range:83, targeting:'both', isFlying:true, isGiant:false, desc:'Flying ranged squad' },
+  { id:'wartortle', name:'Wartortle', sprite:'sprites/pm0008.png', tier:2, squadSize:3, hp:5000, atk:1400, atkSpeed:1.8, speed:18, range:167, targeting:'ground', isFlying:false, isGiant:false, desc:'Water cannon trio' },
   { id:'golem', name:'Golem', sprite:'sprites/pm0076.png', tier:2, squadSize:1, hp:14801, atk:8360, atkSpeed:3.6, speed:24, range:158, targeting:'ground', isFlying:false, isGiant:false, desc:'Heavy ranged tank' },
   { id:'beedrill', name:'Beedrill', sprite:'sprites/pm0015.png', tier:2, squadSize:2, hp:1464, atk:2981, atkSpeed:3.2, speed:48, range:200, targeting:'both', isFlying:true, isGiant:false, desc:'Flying ranged striker' },
   { id:'raichu', name:'Raichu', sprite:'sprites/pm0026.png', tier:2, squadSize:1, hp:4055, atk:4300, atkSpeed:2.6, speed:30, range:250, targeting:'both', isFlying:false, isGiant:false, desc:'Strong ranged solo' },
@@ -383,10 +394,15 @@ const CREATURES = [
   { id:'butterfree', name:'Butterfree', sprite:'sprites/pm0012.png', tier:2.5, squadSize:2, hp:7500, atk:750, atkSpeed:1.6, speed:36, range:125, targeting:'both', isFlying:true, isGiant:false, desc:'Tanky flying duo' },
   { id:'pidgeot', name:'Pidgeot', sprite:'sprites/pm0018.png', tier:2.5, squadSize:3, hp:1900, atk:1200, atkSpeed:1.4, speed:36, range:117, targeting:'both', isFlying:true, isGiant:false, desc:'Elite flying trio' },
   { id:'gengar', name:'Gengar', sprite:'sprites/pm0094.png', tier:2.5, squadSize:1, hp:3249, atk:585, atkSpeed:0.3, speed:24, range:183, targeting:'ground', isFlying:false, isGiant:false, desc:'Rapid-fire ghost' },
+  { id:'zapdos', name:'Zapdos', sprite:'sprites/pm0145.png', tier:2.5, squadSize:1, hp:15001, atk:1620, atkSpeed:1.6, speed:36, range:92, targeting:'both', isFlying:true, isGiant:false, desc:'Legendary electric bird' },
   // Tier 3
   { id:'venusaur', name:'Venusaur', sprite:'sprites/pm0003.png', tier:3, squadSize:1, hp:30907, atk:2, atkSpeed:0.2, speed:18, range:192, targeting:'ground', isFlying:false, isGiant:true, beam:true, beamRamp:70, desc:'Giant solar beam tank' },
   { id:'charizard', name:'Charizard', sprite:'sprites/pm0006.png', tier:3, squadSize:1, hp:35332, atk:90, atkSpeed:0.1, speed:18, range:158, targeting:'ground', isFlying:true, isGiant:true, desc:'Giant flying flamethrower' },
   { id:'blastoise', name:'Blastoise', sprite:'sprites/pm0009.png', tier:3, squadSize:1, hp:43938, atk:6177, atkSpeed:1.8, speed:18, range:167, targeting:'ground', isFlying:false, isGiant:true, desc:'Giant water cannon' },
+  // Tier 3.5
+  { id:'lugia', name:'Lugia', sprite:'sprites/pm0249.png', tier:3.5, squadSize:1, hp:22054, atk:19420, atkSpeed:4.6, speed:30, range:200, targeting:'both', isFlying:true, isGiant:true, desc:'Legendary flying psychic' },
+  // Tier 4
+  { id:'gyarados', name:'Gyarados', sprite:'sprites/pm0130.png', tier:4, squadSize:1, hp:146782, atk:14368, atkSpeed:1.8, speed:18, range:167, targeting:'ground', isFlying:false, isGiant:true, desc:'Giant sea serpent boss' },
 ];
 
 // Preload all sprite images
