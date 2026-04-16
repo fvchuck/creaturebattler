@@ -125,23 +125,27 @@ input[type="range"] { width: 100%; max-width: 340px; accent-color: #ffd700; marg
 .deploy-topbar .round-info span { color: #ffd700; font-weight: bold; }
 .deploy-topbar button { padding: 8px 18px; font-size: 0.95em; min-height: 38px; }
 
-.canvas-viewport {
+.viewport-wrap {
   flex: 1 1 auto;
   position: relative;
+  min-height: 0;
+}
+.canvas-viewport {
+  width: 100%; height: 100%;
   overflow: auto;
   border: 2px solid rgba(255,215,0,0.3);
   border-radius: 8px;
   background: #000;
   -webkit-overflow-scrolling: touch;
-  touch-action: pan-x pan-y; /* allow native 1-finger pan; we handle pinch in JS */
+  touch-action: pan-x pan-y;
   overscroll-behavior: contain;
-  min-height: 0; /* critical for flex children with overflow */
 }
 canvas { display: block; image-rendering: pixelated; }
 
 .zoom-controls {
   position: absolute;
   right: 8px; bottom: 8px;
+  z-index: 10;
   display: flex; flex-direction: column; gap: 4px;
   z-index: 5;
 }
@@ -393,8 +397,10 @@ canvas { display: block; image-rendering: pixelated; }
       </div>
       <button id="battle-btn" disabled>BATTLE!</button>
     </div>
-    <div class="canvas-viewport" id="deploy-viewport">
-      <canvas id="canvas" width="600" height="880"></canvas>
+    <div class="viewport-wrap">
+      <div class="canvas-viewport" id="deploy-viewport">
+        <canvas id="canvas" width="600" height="880"></canvas>
+      </div>
       <div class="zoom-controls">
         <button type="button" data-zoom="in" aria-label="Zoom in">+</button>
         <button type="button" data-zoom="out" aria-label="Zoom out">−</button>
@@ -419,8 +425,10 @@ canvas { display: block; image-rendering: pixelated; }
       </div>
       <div class="team-hud player">You: <span id="player-count">0</span></div>
     </div>
-    <div class="canvas-viewport" id="battle-viewport">
-      <canvas id="canvas-battle" width="600" height="880"></canvas>
+    <div class="viewport-wrap">
+      <div class="canvas-viewport" id="battle-viewport">
+        <canvas id="canvas-battle" width="600" height="880"></canvas>
+      </div>
       <div class="zoom-controls">
         <button type="button" data-zoom="in" data-target="battle" aria-label="Zoom in">+</button>
         <button type="button" data-zoom="out" data-target="battle" aria-label="Zoom out">−</button>
@@ -984,7 +992,13 @@ function updateBattleBtn() {
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 
+// High-DPI canvas: render at device pixel ratio for crisp sprites when zoomed
+const RENDER_SCALE = Math.min(window.devicePixelRatio || 1, 3);
+canvas.width = CANVAS_W * RENDER_SCALE;
+canvas.height = CANVAS_H * RENDER_SCALE;
+
 function renderDeploy() {
+  ctx.setTransform(RENDER_SCALE, 0, 0, RENDER_SCALE, 0, 0);
   ctx.clearRect(0, 0, CANVAS_W, CANVAS_H);
   drawField(ctx);
   drawGridOverlay(ctx);
@@ -1164,9 +1178,10 @@ function drawHoverPreview(c) {
 // accounting for CSS scaling applied by the zoom controller.
 function toCanvasCoords(canvasEl, clientX, clientY) {
   const rect = canvasEl.getBoundingClientRect();
-  const sx = canvasEl.width / rect.width;
-  const sy = canvasEl.height / rect.height;
-  return { x: (clientX - rect.left) * sx, y: (clientY - rect.top) * sy };
+  return {
+    x: (clientX - rect.left) / rect.width * CANVAS_W,
+    y: (clientY - rect.top) / rect.height * CANVAS_H
+  };
 }
 
 // Deploy canvas events
@@ -1337,6 +1352,8 @@ function hideUnitTooltip() {
 // =====================================================================
 const battleCanvas = document.getElementById('canvas-battle');
 const bctx = battleCanvas.getContext('2d');
+battleCanvas.width = CANVAS_W * RENDER_SCALE;
+battleCanvas.height = CANVAS_H * RENDER_SCALE;
 
 function startBattle() {
   G.totalPlayerUnits = G.playerUnits.length;
@@ -1545,12 +1562,13 @@ function updateBattleHud() {
 // CANVAS - BATTLE RENDERING
 // =====================================================================
 function renderBattle() {
-  bctx.clearRect(0, 0, CANVAS_W, battleCanvas.height);
+  bctx.setTransform(RENDER_SCALE, 0, 0, RENDER_SCALE, 0, 0);
+  bctx.clearRect(0, 0, CANVAS_W, CANVAS_H);
   // Field
   bctx.fillStyle = '#1a3a0a';
   bctx.fillRect(0, 0, CANVAS_W, FIELD_MID);
   bctx.fillStyle = '#2d5016';
-  bctx.fillRect(0, FIELD_MID, CANVAS_W, battleCanvas.height - FIELD_MID);
+  bctx.fillRect(0, FIELD_MID, CANVAS_W, CANVAS_H - FIELD_MID);
   // Midline
   bctx.strokeStyle = 'rgba(255,255,255,0.08)';
   bctx.lineWidth = 1;
@@ -1809,7 +1827,7 @@ const deployZP = createZoomPan(
 );
 const battleZP = createZoomPan(
   document.getElementById('battle-viewport'),
-  battleCanvas, CANVAS_W, battleCanvas.height
+  battleCanvas, CANVAS_W, CANVAS_H
 );
 
 // Zoom button wiring
