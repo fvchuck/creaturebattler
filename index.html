@@ -472,15 +472,15 @@ const CREATURES = [
   { id:'metapod', name:'Metapod', sprite:'sprites/pm0011.png', tier:1.5, squadSize:8, hp:5000, atk:0, atkSpeed:0, speed:0, range:0, targeting:'none', isFlying:false, isGiant:false, desc:'Immobile meat shield' },
   { id:'kakuna', name:'Kakuna', sprite:'sprites/pm0014.png', tier:1.5, squadSize:12, hp:7500, atk:0, atkSpeed:0, speed:0, range:0, targeting:'none', isFlying:false, isGiant:false, desc:'Immobile poison cocoons' },
   { id:'ivysaur', name:'Ivysaur', sprite:'sprites/pm0002.png', tier:1.5, squadSize:4, hp:4571, atk:2, atkSpeed:0.2, speed:48, range:75, targeting:'ground', isFlying:false, isGiant:false, beam:true, beamRamp:7, desc:'Tanky solar beam squad' },
-  { id:'charmeleon', name:'Charmeleon', sprite:'sprites/pm0005.png', tier:1.5, squadSize:1, hp:9500, atk:150, atkSpeed:0.2, speed:21, range:155, targeting:'ground', isFlying:false, isGiant:false, desc:'Rapid-fire flame solo' },
-  { id:'exeggutor', name:'Exeggutor', sprite:'sprites/pm0103.png', tier:1.5, squadSize:4, hp:1149, atk:3184, atkSpeed:6.3, speed:18, range:300, targeting:'ground', isFlying:false, isGiant:false, desc:'Long-range artillery' },
-  { id:'graveler', name:'Graveler', sprite:'sprites/pm0075.png', tier:1.5, squadSize:5, hp:3478, atk:608, atkSpeed:4.5, speed:21, range:158, targeting:'ground', isFlying:false, isGiant:false, desc:'Durable rock squad' },
+  { id:'charmeleon', name:'Charmeleon', sprite:'sprites/pm0005.png', tier:1.5, squadSize:1, hp:9500, atk:150, atkSpeed:0.2, speed:21, range:155, targeting:'ground', isFlying:false, isGiant:false, aoeRadius:56, desc:'Rapid-fire flame solo' },
+  { id:'exeggutor', name:'Exeggutor', sprite:'sprites/pm0103.png', tier:1.5, squadSize:4, hp:1149, atk:3184, atkSpeed:6.3, speed:18, range:300, targeting:'ground', isFlying:false, isGiant:false, artillery:true, numShots:4, aoeRadius:44, projectileSpeed:125, desc:'Long-range artillery' },
+  { id:'graveler', name:'Graveler', sprite:'sprites/pm0075.png', tier:1.5, squadSize:5, hp:3478, atk:608, atkSpeed:4.5, speed:21, range:158, targeting:'ground', isFlying:false, isGiant:false, aoeRadius:40, desc:'Durable rock squad' },
   { id:'haunter', name:'Haunter', sprite:'sprites/pm0093.png', tier:1.5, squadSize:3, hp:900, atk:163, atkSpeed:0.3, speed:24, range:183, targeting:'ground', isFlying:false, isGiant:false, desc:'Rapid-fire ghosts' },
   // Tier 2
   { id:'kingler', name:'Kingler', sprite:'sprites/pm0099.png', tier:2, squadSize:2, hp:8201, atk:1497, atkSpeed:0.9, speed:48, range:0, targeting:'ground', isFlying:false, isGiant:false, desc:'Heavy melee duo' },
   { id:'pidgeotto', name:'Pidgeotto', sprite:'sprites/pm0017.png', tier:2, squadSize:6, hp:622, atk:405, atkSpeed:1.4, speed:48, range:83, targeting:'both', isFlying:true, isGiant:false, desc:'Flying ranged squad' },
-  { id:'wartortle', name:'Wartortle', sprite:'sprites/pm0008.png', tier:2, squadSize:3, hp:5000, atk:1400, atkSpeed:1.8, speed:18, range:167, targeting:'ground', isFlying:false, isGiant:false, desc:'Water cannon trio' },
-  { id:'golem', name:'Golem', sprite:'sprites/pm0076.png', tier:2, squadSize:1, hp:14801, atk:8360, atkSpeed:3.6, speed:24, range:158, targeting:'ground', isFlying:false, isGiant:false, desc:'Heavy ranged tank' },
+  { id:'wartortle', name:'Wartortle', sprite:'sprites/pm0008.png', tier:2, squadSize:3, hp:5000, atk:1400, atkSpeed:1.8, speed:18, range:167, targeting:'ground', isFlying:false, isGiant:false, aoeRadius:40, desc:'Water cannon trio' },
+  { id:'golem', name:'Golem', sprite:'sprites/pm0076.png', tier:2, squadSize:1, hp:14801, atk:8360, atkSpeed:3.6, speed:24, range:158, targeting:'ground', isFlying:false, isGiant:false, aoeRadius:40, desc:'Heavy ranged tank' },
   { id:'beedrill', name:'Beedrill', sprite:'sprites/pm0015.png', tier:2, squadSize:2, hp:1464, atk:2981, atkSpeed:3.2, speed:48, range:200, targeting:'both', isFlying:true, isGiant:false, desc:'Flying ranged striker' },
   { id:'raichu', name:'Raichu', sprite:'sprites/pm0026.png', tier:2, squadSize:1, hp:4055, atk:4300, atkSpeed:2.6, speed:30, range:250, targeting:'both', isFlying:false, isGiant:false, desc:'Strong ranged solo' },
   // Tier 2.5
@@ -490,12 +490,12 @@ const CREATURES = [
   { id:'zapdos', name:'Zapdos', sprite:'sprites/pm0145.png', tier:2.5, squadSize:1, hp:15001, atk:1620, atkSpeed:1.6, speed:36, range:92, targeting:'both', isFlying:true, isGiant:false, desc:'Legendary electric bird' },
   // Tier 3
   { id:'venusaur', name:'Venusaur', sprite:'sprites/pm0003.png', tier:3, squadSize:1, hp:30907, atk:2, atkSpeed:0.2, speed:18, range:192, targeting:'ground', isFlying:false, isGiant:true, beam:true, beamRamp:70, desc:'Giant solar beam tank' },
-  { id:'charizard', name:'Charizard', sprite:'sprites/pm0006.png', tier:3, squadSize:1, hp:35332, atk:90, atkSpeed:0.1, speed:18, range:158, targeting:'ground', isFlying:true, isGiant:true, desc:'Giant flying flamethrower' },
-  { id:'blastoise', name:'Blastoise', sprite:'sprites/pm0009.png', tier:3, squadSize:1, hp:43938, atk:6177, atkSpeed:1.8, speed:18, range:167, targeting:'ground', isFlying:false, isGiant:true, desc:'Giant water cannon' },
+  { id:'charizard', name:'Charizard', sprite:'sprites/pm0006.png', tier:3, squadSize:1, hp:35332, atk:90, atkSpeed:0.1, speed:18, range:158, targeting:'ground', isFlying:true, isGiant:true, aoeRadius:120, desc:'Giant flying flamethrower' },
+  { id:'blastoise', name:'Blastoise', sprite:'sprites/pm0009.png', tier:3, squadSize:1, hp:43938, atk:6177, atkSpeed:1.8, speed:18, range:167, targeting:'ground', isFlying:false, isGiant:true, aoeRadius:40, desc:'Giant water cannon' },
   // Tier 3.5
-  { id:'lugia', name:'Lugia', sprite:'sprites/pm0249.png', tier:3.5, squadSize:1, hp:22054, atk:19420, atkSpeed:4.6, speed:30, range:200, targeting:'both', isFlying:true, isGiant:true, desc:'Legendary flying psychic' },
+  { id:'lugia', name:'Lugia', sprite:'sprites/pm0249.png', tier:3.5, squadSize:1, hp:22054, atk:19420, atkSpeed:4.6, speed:30, range:200, targeting:'both', isFlying:true, isGiant:true, artillery:true, numShots:4, aoeRadius:56, projectileSpeed:208, desc:'Legendary flying psychic' },
   // Tier 4
-  { id:'gyarados', name:'Gyarados', sprite:'sprites/pm0130.png', tier:4, squadSize:1, hp:146782, atk:14368, atkSpeed:1.8, speed:18, range:167, targeting:'ground', isFlying:false, isGiant:true, desc:'Giant sea serpent boss' },
+  { id:'gyarados', name:'Gyarados', sprite:'sprites/pm0130.png', tier:4, squadSize:1, hp:146782, atk:14368, atkSpeed:1.8, speed:18, range:167, targeting:'ground', isFlying:false, isGiant:true, numShots:2, aoeRadius:36, desc:'Giant sea serpent boss' },
 ];
 
 // Preload all sprite images
@@ -846,6 +846,10 @@ function deployEnemyCreatures() {
         atkCooldown: 0, target: null,
         beam: cr.beam || false, beamRamp: cr.beamRamp || 0,
         beamTarget: null, beamTime: 0,
+        artillery: cr.artillery || false,
+        numShots: cr.numShots || 1,
+        aoeRadius: cr.aoeRadius || 0,
+        projectileSpeed: cr.projectileSpeed || 400,
       });
     });
   });
@@ -891,6 +895,10 @@ function addEnemyReinforcement() {
       atkCooldown: 0, target: null,
       beam: cr.beam || false, beamRamp: cr.beamRamp || 0,
       beamTarget: null, beamTime: 0,
+      artillery: cr.artillery || false,
+      numShots: cr.numShots || 1,
+      aoeRadius: cr.aoeRadius || 0,
+      projectileSpeed: cr.projectileSpeed || 400,
     });
   });
 
@@ -1253,6 +1261,10 @@ function tryPlaceAt(clientX, clientY) {
       atkCooldown: 0, target: null,
       beam: cr.beam || false, beamRamp: cr.beamRamp || 0,
       beamTarget: null, beamTime: 0,
+      artillery: cr.artillery || false,
+      numShots: cr.numShots || 1,
+      aoeRadius: cr.aoeRadius || 0,
+      projectileSpeed: cr.projectileSpeed || 400,
     });
   });
 
@@ -1305,6 +1317,8 @@ function showUnitTooltip(unit, clientX, clientY) {
   const traits = [];
   if (unit.isFlying) traits.push('Flying');
   if (unit.isGiant) traits.push('Giant');
+  if (unit.artillery) traits.push('Artillery');
+  if (unit.aoeRadius > 0) traits.push('AOE');
   const traitStr = traits.length ? ' · ' + traits.join(', ') : '';
   const img = spriteCache[unit.creatureId];
   const hpPct = Math.max(0, Math.min(1, unit.hp / unit.maxHp));
@@ -1360,6 +1374,7 @@ function startBattle() {
   G.initialPlayerUnits = G.playerUnits.map(u => ({ ...u }));
   G.initialEnemyUnits = G.enemyUnits.map(u => ({ ...u }));
   G.projectiles = [];
+  G.impactEffects = [];
   G.battleRunning = true;
   G.lastTime = performance.now();
   showScreen('battle');
@@ -1381,6 +1396,12 @@ function battleLoop(timestamp) {
 
   // Update projectiles
   updateProjectiles(dt);
+
+  // Update impact effects
+  if (G.impactEffects) {
+    G.impactEffects.forEach(e => e.life -= dt);
+    G.impactEffects = G.impactEffects.filter(e => e.life > 0);
+  }
 
   // Remove dead
   G.playerUnits = G.playerUnits.filter(u => u.hp > 0);
@@ -1489,15 +1510,44 @@ function moveToward(unit, target, dt) {
 
 function attackTarget(unit, target) {
   if (unit.isRanged) {
-    // Spawn projectile
-    G.projectiles.push({
-      x: unit.x, y: unit.isFlying ? unit.y - unit.radius * 0.5 : unit.y,
-      target, damage: unit.atk,
-      speed: 400,
-      emoji: unit.team === 'player' ? '•' : '•',
-      color: unit.team === 'player' ? '#4cff4c' : '#ff4444',
-      radius: 3,
-    });
+    const shots = unit.numShots || 1;
+    const perShotDmg = unit.atk / shots;
+    const speed = unit.projectileSpeed || 400;
+    const startX = unit.x;
+    const startY = unit.isFlying ? unit.y - unit.radius * 0.5 : unit.y;
+
+    for (let i = 0; i < shots; i++) {
+      const proj = {
+        x: startX, y: startY,
+        damage: perShotDmg,
+        speed: speed,
+        color: unit.team === 'player' ? '#4cff4c' : '#ff4444',
+        radius: 3,
+        team: unit.team,
+        aoeRadius: unit.aoeRadius || 0,
+      };
+
+      if (unit.artillery) {
+        // Ground-targeting: aim at target's current position with spread
+        let tx = target.x, ty = target.y;
+        if (shots > 1) {
+          const angle = Math.random() * Math.PI * 2;
+          const spread = Math.random() * (unit.aoeRadius || 20) * 0.7;
+          tx += Math.cos(angle) * spread;
+          ty += Math.sin(angle) * spread;
+        }
+        proj.targetX = tx;
+        proj.targetY = ty;
+        proj.groundTarget = true;
+        proj.color = unit.team === 'player' ? '#ffcc44' : '#ff6644';
+        proj.radius = 5;
+      } else {
+        proj.target = target;
+        if (unit.aoeRadius > 0) proj.radius = 4;
+      }
+
+      G.projectiles.push(proj);
+    }
   } else {
     // Melee - instant damage
     target.hp -= unit.atk;
@@ -1506,21 +1556,57 @@ function attackTarget(unit, target) {
 
 function updateProjectiles(dt) {
   G.projectiles.forEach(p => {
-    if (!p.target || p.target.hp <= 0) { p.dead = true; return; }
-    const dx = p.target.x - p.x;
-    const dy = p.target.y - p.y;
-    const dist = Math.sqrt(dx * dx + dy * dy);
-    if (dist < 10) {
-      p.target.hp -= p.damage;
-      p.dead = true;
-      return;
+    if (p.groundTarget) {
+      // Artillery: move toward fixed ground position
+      const dx = p.targetX - p.x;
+      const dy = p.targetY - p.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < 10) {
+        if (p.aoeRadius > 0) {
+          applyAoeDamage(p.targetX, p.targetY, p.aoeRadius, p.damage, p.team);
+        }
+        G.impactEffects.push({ x: p.targetX, y: p.targetY, maxRadius: p.aoeRadius || 15, life: 0.3, maxLife: 0.3 });
+        p.dead = true;
+        return;
+      }
+      const nx = dx / dist;
+      const ny = dy / dist;
+      p.x += nx * p.speed * dt;
+      p.y += ny * p.speed * dt;
+    } else {
+      // Tracking projectile
+      if (!p.target || p.target.hp <= 0) { p.dead = true; return; }
+      const dx = p.target.x - p.x;
+      const dy = p.target.y - p.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < 10) {
+        if (p.aoeRadius > 0) {
+          applyAoeDamage(p.target.x, p.target.y, p.aoeRadius, p.damage, p.team);
+          G.impactEffects.push({ x: p.target.x, y: p.target.y, maxRadius: p.aoeRadius, life: 0.3, maxLife: 0.3 });
+        } else {
+          p.target.hp -= p.damage;
+        }
+        p.dead = true;
+        return;
+      }
+      const nx = dx / dist;
+      const ny = dy / dist;
+      p.x += nx * p.speed * dt;
+      p.y += ny * p.speed * dt;
     }
-    const nx = dx / dist;
-    const ny = dy / dist;
-    p.x += nx * p.speed * dt;
-    p.y += ny * p.speed * dt;
   });
   G.projectiles = G.projectiles.filter(p => !p.dead);
+}
+
+function applyAoeDamage(x, y, radius, damage, attackerTeam) {
+  const enemies = attackerTeam === 'player' ? G.enemyUnits : G.playerUnits;
+  enemies.forEach(e => {
+    if (e.hp <= 0) return;
+    const dist = Math.sqrt((e.x - x) ** 2 + (e.y - y) ** 2);
+    if (dist <= radius + e.radius) {
+      e.hp -= damage;
+    }
+  });
 }
 
 function resolveCollisions(units) {
@@ -1589,6 +1675,27 @@ function renderBattle() {
     bctx.fillStyle = p.color;
     bctx.fill();
   });
+
+  // AOE impact effects
+  if (G.impactEffects) {
+    G.impactEffects.forEach(e => {
+      const pct = 1 - e.life / e.maxLife; // 0 → 1 as effect ages
+      const r = e.maxRadius * Math.min(1, pct * 2); // expand quickly
+      bctx.save();
+      // Filled blast
+      bctx.beginPath();
+      bctx.arc(e.x, e.y, r, 0, Math.PI * 2);
+      bctx.fillStyle = `rgba(255, 180, 50, ${0.25 * (1 - pct)})`;
+      bctx.fill();
+      // Outer ring
+      bctx.beginPath();
+      bctx.arc(e.x, e.y, r, 0, Math.PI * 2);
+      bctx.strokeStyle = `rgba(255, 120, 0, ${0.5 * (1 - pct)})`;
+      bctx.lineWidth = 2;
+      bctx.stroke();
+      bctx.restore();
+    });
+  }
 
   // Units (draw dead last so alive units are on top)
   const allAlive = [...G.enemyUnits, ...G.playerUnits].filter(u => u.hp > 0);
@@ -1707,6 +1814,7 @@ function cashOut(amount) {
 function continueToNextRound() {
   G.round++;
   G.projectiles = [];
+  G.impactEffects = [];
   // Restore both sides from their pre-battle snapshots (full HP, fallen units back)
   G.playerUnits = G.initialPlayerUnits.map(u => ({ ...u }));
   G.enemyUnits = G.initialEnemyUnits.map(u => ({ ...u }));
