@@ -601,6 +601,44 @@ canvas { display: block; image-rendering: pixelated; }
   margin-top: 6px;
   min-height: 14px;
 }
+.se-footer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  border-top: 1px solid rgba(255,215,0,0.3);
+  background: rgba(0,0,0,0.25);
+  flex-shrink: 0;
+}
+.se-footer-status {
+  flex: 1;
+  min-width: 0;
+  color: #4caf50;
+  font-size: 0.78em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.se-footer-btn {
+  padding: 7px 14px;
+  font-size: 0.82em;
+  min-height: 0;
+  border-radius: 6px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  flex-shrink: 0;
+}
+.se-footer-btn.se-export {
+  background: linear-gradient(135deg, #2a6cd0, #1e4c98);
+  color: #fff;
+}
+.se-footer-btn.se-export:hover { background: linear-gradient(135deg, #3a7ce0, #2e5ca8); }
+.se-footer-btn.se-clear {
+  background: transparent;
+  color: #f88;
+  border-color: rgba(255,150,150,0.4);
+}
+.se-footer-btn.se-clear:hover { background: rgba(255,100,100,0.1); }
 
 /* Wider screens: use desktop-ish layout */
 @media (min-width: 820px) and (min-height: 640px) and (orientation: landscape) {
@@ -648,6 +686,11 @@ canvas { display: block; image-rendering: pixelated; }
     <div class="se-body">
       <div id="se-lineup" class="se-lineup"></div>
       <div id="se-editor" class="se-editor empty">Select a creature above to edit.</div>
+    </div>
+    <div class="se-footer">
+      <div id="se-footer-status" class="se-footer-status"></div>
+      <button id="se-clear-all" class="se-footer-btn se-clear" type="button">Clear all</button>
+      <button id="se-export" class="se-footer-btn se-export" type="button">Export JSON</button>
     </div>
   </div>
 </div>
@@ -3027,6 +3070,52 @@ document.getElementById('debug-open-unit-editor').addEventListener('click', () =
 document.getElementById('se-close').addEventListener('click', () => {
   document.getElementById('unit-editor').classList.remove('active');
 });
+// Export all current overrides to clipboard as JSON — ready to paste into
+// BAKED_UNIT_TUNINGS to promote them to shipping defaults.
+function seShowStatus(msg, isError) {
+  const el = document.getElementById('se-footer-status');
+  if (!el) return;
+  el.style.color = isError ? '#f88' : '#4caf50';
+  el.textContent = msg;
+}
+function seCopyToClipboard(text, onOk, onErr) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(onOk, () => seFallbackCopy(text, onOk, onErr));
+  } else {
+    seFallbackCopy(text, onOk, onErr);
+  }
+}
+function seFallbackCopy(text, onOk, onErr) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.select();
+  let ok = false;
+  try { ok = document.execCommand('copy'); } catch (e) {}
+  document.body.removeChild(ta);
+  if (ok) onOk(); else onErr && onErr();
+}
+document.getElementById('se-export').addEventListener('click', () => {
+  const n = Object.keys(creatureOverrides).length;
+  if (n === 0) { seShowStatus('No overrides to export', true); return; }
+  const json = JSON.stringify(creatureOverrides, null, 2);
+  seCopyToClipboard(json,
+    () => seShowStatus('Copied ' + n + ' override(s) to clipboard'),
+    () => { console.log('cb_creature_overrides:', json); seShowStatus('Copy failed — JSON logged to console', true); });
+});
+document.getElementById('se-clear-all').addEventListener('click', () => {
+  const n = Object.keys(creatureOverrides).length;
+  if (n === 0) { seShowStatus('Nothing to clear', true); return; }
+  if (!confirm('Clear all ' + n + ' local override(s)? Creatures will revert to shipping defaults.')) return;
+  Object.keys(creatureOverrides).forEach(k => delete creatureOverrides[k]);
+  saveCreatureOverrides(creatureOverrides);
+  applyCreatureOverrides();
+  renderUnitEditor();
+  seShowStatus('Cleared ' + n + ' override(s)');
+});
+
 document.getElementById('unit-editor').addEventListener('click', e => {
   if (e.target.id === 'unit-editor') {
     document.getElementById('unit-editor').classList.remove('active');
