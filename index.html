@@ -337,6 +337,9 @@ const G = {
   hoverCell: null,
   lastTime: 0,
   totalPlayerUnits: 0,
+  // Snapshot of the player's squads at battle start, used to fully
+  // restore squads (including fallen units) between rounds.
+  initialPlayerUnits: [],
 };
 
 function initGrid() {
@@ -807,6 +810,9 @@ const bctx = battleCanvas.getContext('2d');
 function startBattle() {
   generateEnemyArmy(G.round);
   G.totalPlayerUnits = G.playerUnits.length;
+  // Snapshot squads at full strength so they can be fully restored
+  // between rounds (including units that fall during this battle).
+  G.initialPlayerUnits = G.playerUnits.map(u => ({ ...u }));
   G.projectiles = [];
   G.battleRunning = true;
   G.lastTime = performance.now();
@@ -1096,17 +1102,11 @@ function cashOut(amount) {
 
 function continueToNextRound() {
   G.round++;
-  // Clear enemy units, keep player units where they are
   G.enemyUnits = [];
   G.projectiles = [];
-  // Respawn all player units: heal, reset, move back to deploy positions
-  G.playerUnits.forEach(u => {
-    u.hp = u.maxHp;
-    u.x = u.spawnX;
-    u.y = u.spawnY;
-    u.atkCooldown = 0;
-    u.target = null;
-  });
+  // Fully restore squads to their original composition (including
+  // any units that died this battle) from the pre-battle snapshot.
+  G.playerUnits = G.initialPlayerUnits.map(u => ({ ...u }));
   showCreatureChoice();
 }
 
@@ -1116,6 +1116,7 @@ function newGame() {
   G.playerUnits = [];
   G.enemyUnits = [];
   G.projectiles = [];
+  G.initialPlayerUnits = [];
   G.availableCreatures = [];
   G.selectedIdx = -1;
   initBetScreen();
