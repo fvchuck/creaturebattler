@@ -1116,22 +1116,6 @@ function drawDeployedUnits(c) {
   G.playerUnits.forEach(u => drawUnit(c, u));
 }
 
-// Reusable offscreen canvas for tinting sprites a solid color
-const _tintCanvas = document.createElement('canvas');
-const _tintCtx = _tintCanvas.getContext('2d');
-function getTintedSprite(img, w, h, color) {
-  if (_tintCanvas.width < w || _tintCanvas.height < h) {
-    _tintCanvas.width = w; _tintCanvas.height = h;
-  }
-  _tintCtx.clearRect(0, 0, w, h);
-  _tintCtx.drawImage(img, 0, 0, w, h);
-  _tintCtx.globalCompositeOperation = 'source-in';
-  _tintCtx.fillStyle = color;
-  _tintCtx.fillRect(0, 0, w, h);
-  _tintCtx.globalCompositeOperation = 'source-over';
-  return _tintCanvas;
-}
-
 function drawUnit(c, u) {
   const r = u.radius;
   // Shadow for flying units
@@ -1147,18 +1131,6 @@ function drawUnit(c, u) {
   const spriteSize = u.unitGridSize * GRID_SIZE * 0.85;
   const info = getSpriteRenderInfo(u.creatureId, spriteSize);
   if (info) {
-    // Red outline for enemy units — draw red-tinted sprite slightly larger behind
-    if (u.team === 'enemy') {
-      const outlinePx = 1;
-      const oScale = 1 + (outlinePx * 2) / spriteSize;
-      const oFullW = info.fullW * oScale;
-      const oFullH = info.fullH * oScale;
-      const oOffX = info.offX * oScale;
-      const oOffY = info.offY * oScale;
-      const tinted = getTintedSprite(info.img, Math.ceil(oFullW), Math.ceil(oFullH), 'rgba(255,50,50,0.9)');
-      c.drawImage(tinted, 0, 0, Math.ceil(oFullW), Math.ceil(oFullH),
-        u.x - oOffX, drawY - oOffY, oFullW, oFullH);
-    }
     c.drawImage(info.img, u.x - info.offX, drawY - info.offY, info.fullW, info.fullH);
   } else {
     // Fallback circle
