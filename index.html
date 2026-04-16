@@ -284,7 +284,7 @@ canvas { display: block; image-rendering: pixelated; }
       <button id="battle-btn" disabled>BATTLE!</button>
     </div>
     <div class="canvas-viewport" id="deploy-viewport">
-      <canvas id="canvas" width="860" height="700"></canvas>
+      <canvas id="canvas" width="600" height="880"></canvas>
       <div class="zoom-controls">
         <button type="button" data-zoom="in" aria-label="Zoom in">+</button>
         <button type="button" data-zoom="out" aria-label="Zoom out">−</button>
@@ -310,7 +310,7 @@ canvas { display: block; image-rendering: pixelated; }
       <div class="team-hud player">You: <span id="player-count">0</span></div>
     </div>
     <div class="canvas-viewport" id="battle-viewport">
-      <canvas id="canvas-battle" width="860" height="680"></canvas>
+      <canvas id="canvas-battle" width="600" height="880"></canvas>
       <div class="zoom-controls">
         <button type="button" data-zoom="in" data-target="battle" aria-label="Zoom in">+</button>
         <button type="button" data-zoom="out" data-target="battle" aria-label="Zoom out">−</button>
@@ -396,8 +396,8 @@ const ROUND_MULTIPLIERS = [1.5, 2.5, 4.0, 7.0, 12.0];
 const MAX_ROUNDS = 5;
 
 const GRID_SIZE = 40;
-const CANVAS_W = 860;
-const CANVAS_H = 700;
+const CANVAS_W = 600;
+const CANVAS_H = 880;
 const FIELD_MID = CANVAS_H / 2;
 const DEPLOY_TOP = FIELD_MID + 20; // player deploys on bottom half
 const MELEE_RANGE = 30;
