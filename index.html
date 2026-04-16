@@ -314,6 +314,95 @@ canvas { display: block; image-rendering: pixelated; }
 @keyframes vs-appear { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
 @keyframes vs-pulse { from { text-shadow: 0 0 30px rgba(255,215,0,0.6), 0 0 60px rgba(255,100,0,0.3); } to { text-shadow: 0 0 50px rgba(255,215,0,0.9), 0 0 90px rgba(255,100,0,0.5); } }
 
+/* Debug button + panel */
+#debug-btn {
+  position: fixed;
+  top: calc(env(safe-area-inset-top) + 8px);
+  right: calc(env(safe-area-inset-right) + 8px);
+  z-index: 1000;
+  background: rgba(20, 20, 35, 0.85);
+  color: #888;
+  border: 1px solid rgba(255,255,255,0.15);
+  padding: 6px 10px;
+  font-size: 0.72em;
+  font-weight: bold;
+  letter-spacing: 1px;
+  border-radius: 6px;
+  cursor: pointer;
+  min-height: 0;
+  opacity: 0.7;
+  transition: opacity 0.15s;
+}
+#debug-btn:hover { opacity: 1; }
+#debug-panel {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 1001;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+#debug-panel.active { display: flex; }
+.debug-panel-inner {
+  background: #1a1a2e;
+  border: 2px solid #ffd700;
+  border-radius: 12px;
+  padding: 24px;
+  min-width: 280px;
+  max-width: 420px;
+  width: 100%;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+.debug-panel-inner h2 { margin-bottom: 4px; }
+.debug-panel-inner .debug-sub { color: #888; font-size: 0.85em; margin-bottom: 18px; text-align: center; }
+.debug-section {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,215,0,0.2);
+  border-radius: 8px;
+  padding: 14px;
+  margin-bottom: 12px;
+}
+.debug-section-title { color: #ffd700; font-weight: bold; margin-bottom: 8px; font-size: 0.95em; }
+.debug-toggle {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 0;
+}
+.debug-toggle-label { flex: 1; font-size: 0.9em; }
+.debug-toggle-desc { color: #888; font-size: 0.75em; margin-top: 2px; }
+.debug-switch {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  background: #444;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+.debug-switch::after {
+  content: '';
+  position: absolute;
+  top: 2px; left: 2px;
+  width: 20px; height: 20px;
+  background: #fff;
+  border-radius: 50%;
+  transition: left 0.2s;
+}
+.debug-switch.on { background: #4caf50; }
+.debug-switch.on::after { left: 22px; }
+#debug-close {
+  width: 100%;
+  margin-top: 8px;
+  padding: 10px;
+  font-size: 0.95em;
+}
+
 /* Wider screens: use desktop-ish layout */
 @media (min-width: 820px) and (min-height: 640px) and (orientation: landscape) {
   .trainer-cards, .choice-cards { flex-direction: row; max-width: none; }
@@ -325,6 +414,26 @@ canvas { display: block; image-rendering: pixelated; }
 </head>
 <body>
 <div id="app">
+
+<!-- DEBUG BUTTON + PANEL -->
+<button id="debug-btn" type="button">DEBUG</button>
+<div id="debug-panel">
+  <div class="debug-panel-inner">
+    <h2>Debug Menu</h2>
+    <div class="debug-sub">Dev-only overrides</div>
+    <div class="debug-section">
+      <div class="debug-section-title">Trainer Select</div>
+      <div class="debug-toggle">
+        <div>
+          <div class="debug-toggle-label">All trainers</div>
+          <div class="debug-toggle-desc">Show every trainer instead of 3 random ones</div>
+        </div>
+        <div id="dbg-all-trainers" class="debug-switch" data-flag="allTrainers"></div>
+      </div>
+    </div>
+    <button id="debug-close">Close</button>
+  </div>
+</div>
 
 <!-- BET SCREEN -->
 <div id="screen-bet" class="screen centered active">
@@ -707,7 +816,20 @@ const G = {
   enemyTrainer: null,
   enemyCreatureIds: [],     // accumulated creature IDs across rounds
   initialEnemyUnits: [],    // snapshot for reset between rounds
+  // Debug flags (persisted to localStorage)
+  debug: loadDebugFlags(),
 };
+
+function loadDebugFlags() {
+  try {
+    const raw = localStorage.getItem('cb_debug');
+    if (raw) return { allTrainers: false, ...JSON.parse(raw) };
+  } catch (e) {}
+  return { allTrainers: false };
+}
+function saveDebugFlags() {
+  try { localStorage.setItem('cb_debug', JSON.stringify(G.debug)); } catch (e) {}
+}
 
 function initGrid() {
   const cols = Math.floor(CANVAS_W / GRID_SIZE);
@@ -754,7 +876,20 @@ function updatePayoutTable(bet) {
 function showTrainerSelect() {
   const container = document.getElementById('trainer-cards');
   container.innerHTML = '';
-  TRAINERS.forEach(t => {
+  // Default: offer 3 random trainers. Debug "all trainers" shows every trainer.
+  let offered;
+  if (G.debug.allTrainers) {
+    offered = TRAINERS;
+  } else {
+    const pool = [...TRAINERS];
+    offered = [];
+    const count = Math.min(3, pool.length);
+    for (let i = 0; i < count; i++) {
+      const idx = Math.floor(Math.random() * pool.length);
+      offered.push(pool.splice(idx, 1)[0]);
+    }
+  }
+  offered.forEach(t => {
     const card = document.createElement('div');
     card.className = 'trainer-card';
     let creaturesHtml = '';
@@ -826,7 +961,7 @@ function showReelScreen() {
   const itemH = 120;
   const targetScroll = landIdx * itemH; // land so chosen item is in view
   let elapsed = 0;
-  const duration = 3000; // ms
+  const duration = 3000 / 1.15; // ms — 15% faster than the original 3000ms
   const startTime = performance.now();
 
   function animateReel(now) {
@@ -2193,6 +2328,39 @@ document.getElementById('place-bet-btn').addEventListener('click', () => {
 
 document.getElementById('battle-btn').addEventListener('click', () => {
   startBattle();
+});
+
+// =====================================================================
+// DEBUG PANEL
+// =====================================================================
+function syncDebugSwitches() {
+  document.querySelectorAll('.debug-switch').forEach(sw => {
+    const flag = sw.dataset.flag;
+    sw.classList.toggle('on', !!G.debug[flag]);
+  });
+}
+document.getElementById('debug-btn').addEventListener('click', () => {
+  syncDebugSwitches();
+  document.getElementById('debug-panel').classList.add('active');
+});
+document.getElementById('debug-close').addEventListener('click', () => {
+  document.getElementById('debug-panel').classList.remove('active');
+});
+document.getElementById('debug-panel').addEventListener('click', e => {
+  // Click outside the inner panel closes it
+  if (e.target.id === 'debug-panel') {
+    document.getElementById('debug-panel').classList.remove('active');
+  }
+});
+document.querySelectorAll('.debug-switch').forEach(sw => {
+  sw.addEventListener('click', () => {
+    const flag = sw.dataset.flag;
+    G.debug[flag] = !G.debug[flag];
+    saveDebugFlags();
+    sw.classList.toggle('on', !!G.debug[flag]);
+    // If we're on the trainer select screen, refresh it so the toggle takes effect immediately
+    if (flag === 'allTrainers' && G.screen === 'trainer') showTrainerSelect();
+  });
 });
 
 // =====================================================================
