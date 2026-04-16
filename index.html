@@ -768,7 +768,7 @@ function drawUnit(c, u) {
   if (img) {
     // Red outline for enemy units — draw red-tinted sprite slightly larger behind
     if (u.team === 'enemy') {
-      const outline = 3;
+      const outline = 1;
       const oSize = spriteSize + outline * 2;
       const tinted = getTintedSprite(img, Math.ceil(oSize), Math.ceil(oSize), 'rgba(255,50,50,0.9)');
       c.drawImage(tinted, 0, 0, Math.ceil(oSize), Math.ceil(oSize),
