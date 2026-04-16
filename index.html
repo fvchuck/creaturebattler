@@ -1576,6 +1576,8 @@ function attackTarget(unit, target) {
         proj.groundTarget = true;
         proj.color = unit.team === 'player' ? '#ffcc44' : '#ff6644';
         proj.radius = 5;
+        proj.speed = speed * 0.34; // 66% slower than base
+        proj.trail = [];
       } else {
         proj.target = target;
         if (unit.aoeRadius > 0) proj.radius = 4;
@@ -1608,6 +1610,10 @@ function updateProjectiles(dt) {
       const ny = dy / dist;
       p.x += nx * p.speed * dt;
       p.y += ny * p.speed * dt;
+      if (p.trail) {
+        p.trail.push({ x: p.x, y: p.y });
+        if (p.trail.length > 12) p.trail.shift();
+      }
     } else {
       // Tracking projectile
       if (!p.target || p.target.hp <= 0) { p.dead = true; return; }
@@ -1705,6 +1711,23 @@ function renderBattle() {
 
   // Projectiles
   G.projectiles.forEach(p => {
+    if (p.trail && p.trail.length > 1) {
+      bctx.save();
+      for (let i = 0; i < p.trail.length - 1; i++) {
+        const a = p.trail[i];
+        const b = p.trail[i + 1];
+        const t = (i + 1) / p.trail.length; // 0 → 1, fades from tail to head
+        bctx.globalAlpha = t * 0.6;
+        bctx.strokeStyle = p.color;
+        bctx.lineWidth = p.radius * t * 1.4;
+        bctx.lineCap = 'round';
+        bctx.beginPath();
+        bctx.moveTo(a.x, a.y);
+        bctx.lineTo(b.x, b.y);
+        bctx.stroke();
+      }
+      bctx.restore();
+    }
     bctx.beginPath();
     bctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
     bctx.fillStyle = p.color;
