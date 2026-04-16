@@ -225,6 +225,31 @@ canvas { display: block; image-rendering: pixelated; }
 .gameover-amount { font-size: 1.8em; color: #4cff4c; font-weight: bold; margin: 6px 0; }
 .gameover-amount.lost { color: #ff4444; }
 
+/* Unit Tooltip */
+#unit-tooltip {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  pointer-events: none;
+  min-width: 170px; max-width: 260px;
+  background: rgba(20, 20, 38, 0.96);
+  border: 1px solid rgba(255,215,0,0.4);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 0.82em;
+  color: #e0e0e0;
+  box-shadow: 0 4px 18px rgba(0,0,0,0.5);
+}
+#unit-tooltip .ut-name { color: #ffd700; font-weight: bold; font-size: 1.05em; display: flex; align-items: center; gap: 6px; }
+#unit-tooltip .ut-name img { width: 22px; height: 22px; image-rendering: pixelated; }
+#unit-tooltip .ut-team { font-size: 0.85em; margin: 2px 0 6px; }
+#unit-tooltip .ut-team-player { color: #4caf50; }
+#unit-tooltip .ut-team-enemy { color: #f44336; }
+#unit-tooltip .ut-row { display: flex; justify-content: space-between; gap: 10px; padding: 1px 0; }
+#unit-tooltip .ut-row span:first-child { color: #888; }
+#unit-tooltip .ut-hpbar { height: 4px; background: #333; border-radius: 2px; margin: 2px 0 4px; overflow: hidden; }
+#unit-tooltip .ut-hpbar-fill { height: 100%; background: #4caf50; transition: width 0.15s; }
+
 /* Wider screens: use desktop-ish layout */
 @media (min-width: 820px) and (min-height: 640px) and (orientation: landscape) {
   .trainer-cards, .choice-cards { flex-direction: row; max-width: none; }
@@ -329,6 +354,8 @@ canvas { display: block; image-rendering: pixelated; }
 </div>
 
 </div>
+
+<div id="unit-tooltip"></div>
 
 <script>
 // =====================================================================
@@ -901,7 +928,80 @@ function tryPlaceAt(clientX, clientY) {
   renderDeploy();
 }
 
-canvas.addEventListener('click', e => tryPlaceAt(e.clientX, e.clientY));
+canvas.addEventListener('click', e => {
+  const hit = findUnitAt(canvas, G.playerUnits, e.clientX, e.clientY);
+  if (hit) {
+    showUnitTooltip(hit, e.clientX, e.clientY);
+    return;
+  }
+  hideUnitTooltip();
+  tryPlaceAt(e.clientX, e.clientY);
+});
+
+// =====================================================================
+// UNIT TOOLTIP
+// =====================================================================
+function findUnitAt(canvasEl, units, clientX, clientY) {
+  const { x, y } = toCanvasCoords(canvasEl, clientX, clientY);
+  let best = null, bestDist = Infinity;
+  for (const u of units) {
+    if (u.hp <= 0) continue;
+    const drawY = u.isFlying ? u.y - u.radius * 0.5 : u.y;
+    const dx = x - u.x;
+    const dy = y - drawY;
+    const d2 = dx * dx + dy * dy;
+    const hitR = u.radius * 1.2;
+    if (d2 <= hitR * hitR && d2 < bestDist) { bestDist = d2; best = u; }
+  }
+  return best;
+}
+
+function showUnitTooltip(unit, clientX, clientY) {
+  const tip = document.getElementById('unit-tooltip');
+  const dps = unit.atkSpeed > 0 ? Math.round(unit.atk / unit.atkSpeed) : 0;
+  const rangeStr = unit.isRanged ? unit.range : 'Melee';
+  const traits = [];
+  if (unit.isFlying) traits.push('Flying');
+  if (unit.isGiant) traits.push('Giant');
+  const traitStr = traits.length ? ' · ' + traits.join(', ') : '';
+  const img = spriteCache[unit.creatureId];
+  const hpPct = Math.max(0, Math.min(1, unit.hp / unit.maxHp));
+  const hpColor = hpPct > 0.5 ? '#4caf50' : hpPct > 0.25 ? '#ff9800' : '#f44336';
+  tip.innerHTML = `
+    <div class="ut-name">${img ? `<img src="${img.src}">` : ''}${unit.name}</div>
+    <div class="ut-team ut-team-${unit.team}">${unit.team === 'player' ? 'Your unit' : 'Enemy'}${traitStr}</div>
+    <div class="ut-hpbar"><div class="ut-hpbar-fill" style="width:${hpPct * 100}%;background:${hpColor}"></div></div>
+    <div class="ut-row"><span>HP</span><span>${Math.max(0, Math.ceil(unit.hp))} / ${unit.maxHp}</span></div>
+    <div class="ut-row"><span>ATK</span><span>${unit.atk}${unit.atkSpeed > 0 ? ' (' + dps + ' DPS)' : ''}</span></div>
+    <div class="ut-row"><span>Atk Speed</span><span>${unit.atkSpeed > 0 ? unit.atkSpeed + 's' : '—'}</span></div>
+    <div class="ut-row"><span>Range</span><span>${rangeStr}</span></div>
+    <div class="ut-row"><span>Speed</span><span>${unit.speed}</span></div>
+    <div class="ut-row"><span>Targets</span><span>${unit.targeting}</span></div>
+  `;
+  tip.style.display = 'block';
+  // Position near tap, clamped to viewport
+  const tr = tip.getBoundingClientRect();
+  let left = clientX + 14;
+  let top = clientY + 14;
+  if (left + tr.width > window.innerWidth - 8) left = clientX - tr.width - 14;
+  if (top + tr.height > window.innerHeight - 8) top = clientY - tr.height - 14;
+  tip.style.left = Math.max(8, left) + 'px';
+  tip.style.top = Math.max(8, top) + 'px';
+}
+
+function hideUnitTooltip() {
+  document.getElementById('unit-tooltip').style.display = 'none';
+}
+
+// Battle screen: tap a unit to inspect
+(function wireBattleTooltip() {
+  const bc = document.getElementById('canvas-battle');
+  bc.addEventListener('click', e => {
+    const hit = findUnitAt(bc, [...G.playerUnits, ...G.enemyUnits], e.clientX, e.clientY);
+    if (hit) showUnitTooltip(hit, e.clientX, e.clientY);
+    else hideUnitTooltip();
+  });
+})();
 
 // =====================================================================
 // AI - ENEMY DEPLOYMENT
@@ -1391,6 +1491,7 @@ document.querySelectorAll('[data-zoom]').forEach(btn => {
 const _origShowScreen = showScreen;
 showScreen = function(name) {
   _origShowScreen(name);
+  hideUnitTooltip();
   // Defer to let the element become visible and get real dimensions.
   requestAnimationFrame(() => {
     if (name === 'deploy') deployZP.fit();
