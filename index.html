@@ -1175,7 +1175,7 @@ const BAKED_UNIT_TUNINGS = {
   squirtle:   { spriteScale: 1.5588235294117647 },
   charmander: { spriteScale: 1.6764705882352942, unitGridSize: 1 },
   pikachu:    { spriteScale: 1.8823529411764706, unitGridSize: 1 },
-  exeggutor:  { spriteScale: 1.9705882352941178 },
+  exeggutor:  { spriteScale: 1.9705882352941178, collisionRadius: 30 },
   geodude:    { spriteScale: 2.5588235294117645 },
   graveler:   { spriteScale: 2.5588235294117645 },
   wartortle:  { spriteScale: 2.8529411764705883, unitGridSize: 2 },
@@ -1184,10 +1184,11 @@ const BAKED_UNIT_TUNINGS = {
   ivysaur:    { spriteScale: 2.9411764705882355, unitGridSize: 2 },
   kingler:    { spriteScale: 3.264705882352941, unitGridSize: 2 },
   zapdos:     { spriteScale: 3.6176470588235294 },
-  raichu:     { spriteScale: 3.911764705882353 },
+  raichu:     { spriteScale: 3.911764705882353, collisionRadius: 48, spriteOffsetX: 15, spriteOffsetY: -1 },
   blastoise:  { spriteScale: 4.029411764705882 },
-  charizard:  { spriteScale: 4.617647058823529 },
+  charizard:  { spriteScale: 4.617647058823529, collisionRadius: 66, spriteOffsetX: 15 },
   venusaur:   { spriteScale: 4.764705882352941 },
+  lugia:      { collisionRadius: 64 },
 };
 Object.keys(BAKED_UNIT_TUNINGS).forEach(id => {
   const c = CREATURES.find(x => x.id === id);
