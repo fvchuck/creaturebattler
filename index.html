@@ -693,6 +693,7 @@ const G = {
   playerUnits: [],
   enemyUnits: [],
   projectiles: [],
+  tracers: [],
   availableCreatures: [],   // [{creature, placed:bool}]
   selectedIdx: -1,
   grid: null,
@@ -1409,6 +1410,7 @@ function startBattle() {
   G.initialPlayerUnits = G.playerUnits.map(u => ({ ...u }));
   G.initialEnemyUnits = G.enemyUnits.map(u => ({ ...u }));
   G.projectiles = [];
+  G.tracers = [];
   G.impactEffects = [];
   G.battleRunning = true;
   G.lastTime = performance.now();
@@ -1436,6 +1438,12 @@ function battleLoop(timestamp) {
   if (G.impactEffects) {
     G.impactEffects.forEach(e => e.life -= dt);
     G.impactEffects = G.impactEffects.filter(e => e.life > 0);
+  }
+
+  // Update tracers (short-lived line effects from light attacks)
+  if (G.tracers) {
+    G.tracers.forEach(t => t.life -= dt);
+    G.tracers = G.tracers.filter(t => t.life > 0);
   }
 
   // Remove dead
@@ -1550,6 +1558,23 @@ function attackTarget(unit, target) {
     const speed = unit.projectileSpeed || 400;
     const startX = unit.x;
     const startY = unit.isFlying ? unit.y - unit.radius * 0.5 : unit.y;
+
+    // Light attacks: instant hit-scan tracer instead of a circle projectile.
+    const isLight = perShotDmg < 200 && !unit.artillery && !unit.aoeRadius && !unit.beam;
+    if (isLight) {
+      const color = unit.team === 'player' ? '#aaffaa' : '#ffaaaa';
+      for (let i = 0; i < shots; i++) {
+        const tx = target.x;
+        const ty = target.isFlying ? target.y - target.radius * 0.5 : target.y;
+        G.tracers.push({
+          x1: startX, y1: startY,
+          x2: tx, y2: ty,
+          color, life: 0.08, maxLife: 0.08,
+        });
+        target.hp -= perShotDmg;
+      }
+      return;
+    }
 
     for (let i = 0; i < shots; i++) {
       const proj = {
@@ -1708,6 +1733,32 @@ function renderBattle() {
 
   // Beam effects (draw behind everything else)
   drawBeams(bctx, [...G.playerUnits, ...G.enemyUnits]);
+
+  // Tracers (light-attack hit-scan lines)
+  if (G.tracers) {
+    G.tracers.forEach(t => {
+      const a = t.life / t.maxLife; // 1 → 0 as it ages
+      bctx.save();
+      // Outer glow
+      bctx.globalAlpha = 0.35 * a;
+      bctx.strokeStyle = t.color;
+      bctx.lineWidth = 2.5;
+      bctx.lineCap = 'round';
+      bctx.beginPath();
+      bctx.moveTo(t.x1, t.y1);
+      bctx.lineTo(t.x2, t.y2);
+      bctx.stroke();
+      // Bright core
+      bctx.globalAlpha = a;
+      bctx.strokeStyle = '#ffffff';
+      bctx.lineWidth = 0.8;
+      bctx.beginPath();
+      bctx.moveTo(t.x1, t.y1);
+      bctx.lineTo(t.x2, t.y2);
+      bctx.stroke();
+      bctx.restore();
+    });
+  }
 
   // Projectiles
   G.projectiles.forEach(p => {
@@ -1872,6 +1923,7 @@ function cashOut(amount) {
 function continueToNextRound() {
   G.round++;
   G.projectiles = [];
+  G.tracers = [];
   G.impactEffects = [];
   // Restore both sides from their pre-battle snapshots (full HP, fallen units back)
   G.playerUnits = G.initialPlayerUnits.map(u => ({ ...u }));
