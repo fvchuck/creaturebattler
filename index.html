@@ -693,7 +693,6 @@ const G = {
   playerUnits: [],
   enemyUnits: [],
   projectiles: [],
-  tracers: [],
   flameCones: [],
   availableCreatures: [],   // [{creature, placed:bool}]
   selectedIdx: -1,
@@ -1414,7 +1413,6 @@ function startBattle() {
   G.initialPlayerUnits = G.playerUnits.map(u => ({ ...u }));
   G.initialEnemyUnits = G.enemyUnits.map(u => ({ ...u }));
   G.projectiles = [];
-  G.tracers = [];
   G.flameCones = [];
   G.impactEffects = [];
   G.battleRunning = true;
@@ -1443,12 +1441,6 @@ function battleLoop(timestamp) {
   if (G.impactEffects) {
     G.impactEffects.forEach(e => e.life -= dt);
     G.impactEffects = G.impactEffects.filter(e => e.life > 0);
-  }
-
-  // Update tracers (short-lived line effects from light attacks)
-  if (G.tracers) {
-    G.tracers.forEach(t => t.life -= dt);
-    G.tracers = G.tracers.filter(t => t.life > 0);
   }
 
   // Update flame cones (overlapping bursts that read as a continuous stream)
@@ -1582,19 +1574,24 @@ function attackTarget(unit, target) {
       return;
     }
 
-    // Light attacks: instant hit-scan tracer instead of a circle projectile.
+    // Light attacks: line-shaped tracking projectile instead of a circle.
     const isLight = perShotDmg < 200 && !unit.artillery && !unit.aoeRadius && !unit.beam;
     if (isLight) {
       const color = unit.team === 'player' ? '#aaffaa' : '#ffaaaa';
       for (let i = 0; i < shots; i++) {
-        const tx = target.x;
-        const ty = target.isFlying ? target.y - target.radius * 0.5 : target.y;
-        G.tracers.push({
-          x1: startX, y1: startY,
-          x2: tx, y2: ty,
-          color, life: 0.08, maxLife: 0.08,
+        G.projectiles.push({
+          x: startX, y: startY,
+          damage: perShotDmg,
+          speed: speed * 1.8, // snappier than heavy projectiles
+          color,
+          radius: 2,
+          team: unit.team,
+          aoeRadius: 0,
+          target,
+          lineShape: true,
+          lineLength: 14,
+          dx: 0, dy: 0,
         });
-        target.hp -= perShotDmg;
       }
       return;
     }
@@ -1611,14 +1608,15 @@ function attackTarget(unit, target) {
       };
 
       if (unit.artillery) {
-        // Ground-targeting: aim at target's current position with spread
+        // Ground-targeting: aim at target's current position with scatter so
+        // repeated shells (same unit or multiple units on the same target)
+        // don't stack on a single pixel.
         let tx = target.x, ty = target.y;
-        if (shots > 1) {
-          const angle = Math.random() * Math.PI * 2;
-          const spread = Math.random() * (unit.aoeRadius || 20) * 0.7;
-          tx += Math.cos(angle) * spread;
-          ty += Math.sin(angle) * spread;
-        }
+        const angle = Math.random() * Math.PI * 2;
+        const maxSpread = shots > 1 ? (unit.aoeRadius || 20) * 0.7 : (unit.aoeRadius || 20) * 0.45;
+        const spread = Math.random() * maxSpread;
+        tx += Math.cos(angle) * spread;
+        ty += Math.sin(angle) * spread;
         proj.targetX = tx;
         proj.targetY = ty;
         proj.groundTarget = true;
@@ -1660,7 +1658,7 @@ function updateProjectiles(dt) {
       p.y += ny * p.speed * dt;
       if (p.trail) {
         p.trail.push({ x: p.x, y: p.y });
-        if (p.trail.length > 12) p.trail.shift();
+        if (p.trail.length > 24) p.trail.shift();
       }
     } else {
       // Tracking projectile
@@ -1680,6 +1678,7 @@ function updateProjectiles(dt) {
       }
       const nx = dx / dist;
       const ny = dy / dist;
+      p.dx = nx; p.dy = ny; // cached for line-shape rendering
       p.x += nx * p.speed * dt;
       p.y += ny * p.speed * dt;
     }
@@ -1760,32 +1759,6 @@ function renderBattle() {
   // Flame cones (drawn behind units so unit sprites overlap the throat)
   drawFlameCones(bctx);
 
-  // Tracers (light-attack hit-scan lines)
-  if (G.tracers) {
-    G.tracers.forEach(t => {
-      const a = t.life / t.maxLife; // 1 → 0 as it ages
-      bctx.save();
-      // Outer glow
-      bctx.globalAlpha = 0.35 * a;
-      bctx.strokeStyle = t.color;
-      bctx.lineWidth = 2.5;
-      bctx.lineCap = 'round';
-      bctx.beginPath();
-      bctx.moveTo(t.x1, t.y1);
-      bctx.lineTo(t.x2, t.y2);
-      bctx.stroke();
-      // Bright core
-      bctx.globalAlpha = a;
-      bctx.strokeStyle = '#ffffff';
-      bctx.lineWidth = 0.8;
-      bctx.beginPath();
-      bctx.moveTo(t.x1, t.y1);
-      bctx.lineTo(t.x2, t.y2);
-      bctx.stroke();
-      bctx.restore();
-    });
-  }
-
   // Projectiles
   G.projectiles.forEach(p => {
     if (p.trail && p.trail.length > 1) {
@@ -1804,6 +1777,32 @@ function renderBattle() {
         bctx.stroke();
       }
       bctx.restore();
+    }
+    if (p.lineShape) {
+      // Elongated tracer bolt oriented along direction of travel.
+      const len = p.lineLength || 12;
+      const hx = (p.dx || 0) * len * 0.5;
+      const hy = (p.dy || 0) * len * 0.5;
+      bctx.save();
+      bctx.lineCap = 'round';
+      // Outer glow
+      bctx.globalAlpha = 0.45;
+      bctx.strokeStyle = p.color;
+      bctx.lineWidth = 3;
+      bctx.beginPath();
+      bctx.moveTo(p.x - hx, p.y - hy);
+      bctx.lineTo(p.x + hx, p.y + hy);
+      bctx.stroke();
+      // Bright core
+      bctx.globalAlpha = 1;
+      bctx.strokeStyle = '#ffffff';
+      bctx.lineWidth = 1;
+      bctx.beginPath();
+      bctx.moveTo(p.x - hx, p.y - hy);
+      bctx.lineTo(p.x + hx, p.y + hy);
+      bctx.stroke();
+      bctx.restore();
+      return;
     }
     bctx.beginPath();
     bctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
@@ -2000,7 +1999,6 @@ function cashOut(amount) {
 function continueToNextRound() {
   G.round++;
   G.projectiles = [];
-  G.tracers = [];
   G.flameCones = [];
   G.impactEffects = [];
   // Restore both sides from their pre-battle snapshots (full HP, fallen units back)
