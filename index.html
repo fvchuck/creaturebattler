@@ -2896,79 +2896,98 @@ function renderSpriteEditorDetail() {
   });
 }
 
-// Draw a grid footprint highlight (NxN cells of GRID_SIZE each) centered on
-// (cxp, cyp). Also lightly outlines the cells.
-function seDrawFootprint(cx, cxp, cyp, ugs, fill, stroke) {
+// Draw a footprint of NxN grid cells anchored at integer grid (startCol, startRow).
+// All four outer edges and internal dividers land exactly on canvas grid lines,
+// so the highlight stays aligned with the background grid no matter what.
+function seDrawFootprint(cx, startCol, startRow, ugs, fill, stroke) {
+  const x0 = startCol * GRID_SIZE;
+  const y0 = startRow * GRID_SIZE;
   const span = ugs * GRID_SIZE;
-  const x0 = cxp - span / 2;
-  const y0 = cyp - span / 2;
   cx.fillStyle = fill;
   cx.fillRect(x0, y0, span, span);
   cx.strokeStyle = stroke;
   cx.lineWidth = 1;
-  for (let i = 0; i <= ugs; i++) {
+  // Internal cell dividers (drawn on actual grid lines)
+  for (let i = 1; i < ugs; i++) {
     cx.beginPath();
     cx.moveTo(x0 + i * GRID_SIZE + 0.5, y0);
     cx.lineTo(x0 + i * GRID_SIZE + 0.5, y0 + span);
     cx.stroke();
     cx.beginPath();
-    cx.moveTo(x0, y0 + i * GRID_SIZE + 0.5);
-    cx.lineTo(x0 + span, y0 + i * GRID_SIZE + 0.5);
+    cx.moveTo(x0 + 0.5, y0 + i * GRID_SIZE + 0.5);
+    cx.lineTo(x0 + span + 0.5, y0 + i * GRID_SIZE + 0.5);
     cx.stroke();
   }
+  // Outer border — slightly heavier so the footprint reads as a single shape
+  cx.lineWidth = 1.5;
+  cx.strokeRect(x0 + 0.75, y0 + 0.75, span - 0.5, span - 0.5);
 }
 
 function drawSpriteEditorPreview(c, previewSize, previewUgs) {
   const cv = document.getElementById('se-preview-canvas');
   if (!cv) return;
   const cx = cv.getContext('2d');
-  cx.clearRect(0, 0, cv.width, cv.height);
-  // Field background
+  const W = cv.width, H = cv.height;
+  cx.clearRect(0, 0, W, H);
   cx.fillStyle = '#2d5016';
-  cx.fillRect(0, 0, cv.width, cv.height);
+  cx.fillRect(0, 0, W, H);
 
-  // Faint grid lines across the whole canvas so cells are visible even
-  // outside the footprint — matches the in-game GRID_SIZE of 40 px.
-  cx.strokeStyle = 'rgba(255,255,255,0.07)';
+  // Faint 40 px grid lines across the whole canvas — same pitch as in-game.
+  cx.strokeStyle = 'rgba(255,255,255,0.09)';
   cx.lineWidth = 1;
-  for (let x = 0; x <= cv.width; x += GRID_SIZE) {
-    cx.beginPath(); cx.moveTo(x + 0.5, 0); cx.lineTo(x + 0.5, cv.height); cx.stroke();
+  for (let x = 0; x <= W; x += GRID_SIZE) {
+    cx.beginPath(); cx.moveTo(x + 0.5, 0); cx.lineTo(x + 0.5, H); cx.stroke();
   }
-  for (let y = 0; y <= cv.height; y += GRID_SIZE) {
-    cx.beginPath(); cx.moveTo(0, y + 0.5); cx.lineTo(cv.width, y + 0.5); cx.stroke();
+  for (let y = 0; y <= H; y += GRID_SIZE) {
+    cx.beginPath(); cx.moveTo(0, y + 0.5); cx.lineTo(W, y + 0.5); cx.stroke();
   }
 
-  const groundY = cv.height - 26;
+  // Snap the ground line to a grid row near the bottom — footprints rest on it.
+  const totalCols = Math.floor(W / GRID_SIZE);
+  const groundRow = Math.max(1, Math.round((H - 26) / GRID_SIZE));
+  const groundY = groundRow * GRID_SIZE;
 
-  // Caterpie (baseline reference)
-  const caterpie = getCreature('caterpie');
-  const catSize = getSpriteSize(caterpie);
-  const catUgs = getUnitGridSize(caterpie);
-  // Snap to 40px grid so footprint aligns with grid lines
-  const catX = Math.round(cv.width * 0.25 / GRID_SIZE) * GRID_SIZE;
-  const catCenterY = groundY - catSize / 2;
-  seDrawFootprint(cx, catX, catCenterY, catUgs, 'rgba(76,175,80,0.18)', 'rgba(76,175,80,0.55)');
-  seDrawCreatureOnGround(cx, 'caterpie', catSize, catX, groundY);
+  // Baseline Caterpie — always shown at its shipping defaults, regardless of
+  // whether the user has overridden Caterpie itself (keeps it a stable ruler).
+  const catDef = CREATURE_DEFAULTS.caterpie || getCreature('caterpie');
+  const catUgs = getUnitGridSize({ ...catDef, unitGridSize: undefined });
+  const catSize = getSpriteScale({ ...catDef, spriteScale: undefined }) * SPRITE_BASELINE_PX;
 
-  // Selected creature with live preview values
   const selSize = previewSize != null ? previewSize : getSpriteSize(c);
   const selUgs = previewUgs != null ? previewUgs : getUnitGridSize(c);
-  const selX = Math.round(cv.width * 0.72 / GRID_SIZE) * GRID_SIZE;
-  const selCenterY = groundY - selSize / 2;
-  seDrawFootprint(cx, selX, selCenterY, selUgs, 'rgba(255,215,0,0.18)', 'rgba(255,215,0,0.65)');
-  seDrawCreatureOnGround(cx, c.id, selSize, selX, groundY);
 
-  // Ground line (stronger)
+  // Place each footprint on integer grid cells so it aligns perfectly with
+  // the background grid — Caterpie left-aligned, selected right-aligned, with
+  // at least a 1-cell gap between them.
+  const catStartCol = 1;
+  const selStartCol = Math.max(catStartCol + catUgs + 1, totalCols - selUgs - 1);
+  const catStartRow = groundRow - catUgs;
+  const selStartRow = groundRow - selUgs;
+
+  seDrawFootprint(cx, catStartCol, catStartRow, catUgs,
+    'rgba(76,175,80,0.22)', 'rgba(76,175,80,0.65)');
+  seDrawFootprint(cx, selStartCol, selStartRow, selUgs,
+    'rgba(255,215,0,0.22)', 'rgba(255,215,0,0.75)');
+
+  // Ground line (a bit more prominent than the background grid)
   cx.strokeStyle = 'rgba(255,255,255,0.5)';
   cx.lineWidth = 1;
-  cx.beginPath(); cx.moveTo(0, groundY + 0.5); cx.lineTo(cv.width, groundY + 0.5); cx.stroke();
+  cx.beginPath(); cx.moveTo(0, groundY + 0.5); cx.lineTo(W, groundY + 0.5); cx.stroke();
+
+  // Sprites — ground-anchored, horizontally centered on the footprint
+  const catCenterX = (catStartCol + catUgs / 2) * GRID_SIZE;
+  const selCenterX = (selStartCol + selUgs / 2) * GRID_SIZE;
+  seDrawCreatureOnGround(cx, 'caterpie', catSize, catCenterX, groundY);
+  seDrawCreatureOnGround(cx, c.id, selSize, selCenterX, groundY);
 
   // Labels
   cx.fillStyle = '#fff';
   cx.font = '10px sans-serif';
   cx.textAlign = 'center';
-  cx.fillText('Caterpie · ' + Math.round(catSize) + 'px · ' + catUgs + '×' + catUgs, catX, groundY + 14);
-  cx.fillText(c.name + ' · ' + Math.round(selSize) + 'px · ' + selUgs + '×' + selUgs, selX, groundY + 14);
+  cx.fillText('Caterpie · ' + Math.round(catSize) + 'px · ' + catUgs + '×' + catUgs,
+    catCenterX, groundY + 14);
+  cx.fillText(c.name + ' · ' + Math.round(selSize) + 'px · ' + selUgs + '×' + selUgs,
+    selCenterX, groundY + 14);
 }
 
 document.getElementById('debug-open-sprite-editor').addEventListener('click', () => {
